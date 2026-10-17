@@ -1,0 +1,27 @@
+# AGENTS.override.md — example (rename to AGENTS.override.md to use)
+
+<!-- Pi loads ONE context file per directory, first match wins:
+       AGENTS.override.md > AGENTS.md > AGENTS.MD > CLAUDE.md > CLAUDE.MD
+     An AGENTS.override.md "replaces AGENTS.md or CLAUDE.md only in the same directory".
+
+     Typical use: a repo that carries BOTH a committed AGENTS.md (for other agents) and a local,
+     gitignored CLAUDE.md with your personal orientation. Pi would load only AGENTS.md and silently
+     ignore CLAUDE.md. A gitignored AGENTS.override.md lets you merge the two for Pi without touching
+     either original. Add it to .gitignore. -->
+
+# Local orientation (Pi, this machine)
+
+Read `AGENTS.md` in this directory for the shared project orientation — it is NOT loaded
+automatically while this override exists, so the essentials are repeated below.
+
+## Essentials (from AGENTS.md)
+
+- Owned repo: `sample-service`; sibling repos are read-only context.
+- Tests: `.venv/bin/pytest tests/ -q`.
+- Navigation: CodeGraph `codegraph_explore` → Serena `find_referencing_symbols` → grep.
+- Human owns push / PR / merge / deploy.
+
+## Personal additions (from the local CLAUDE.md)
+
+- Machine role: read `data/changes/s3-sync/IDENTITY.md` before any shared write.
+- Session start: `/skill:day start`.

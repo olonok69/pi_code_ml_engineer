@@ -1,0 +1,42 @@
+---
+description: Inbound/outbound gates, sanitise, review loop, handoff
+alwaysApply: true
+---
+
+# Gates and handoff
+
+## Inbound gate (before code)
+
+1. Symptom visible at the **output contract**? If not → push back with evidence; do not patch.
+2. **Provenance**: reproduce on pre-change baseline → regression vs pre-existing. Classification changes scope and story.
+
+## Implementation gate
+
+1. Failing scoped test first (RED for the right reason).
+2. Minimal code to GREEN.
+3. Full relevant suite green; no silent regressions.
+
+## Outbound gate (before “done”) — five checks
+
+1. **Canary the instrument** on a known-answer case before trusting any diagnostic that informs ship — filters, locks, and scanners whose correct answer is silence must show a reject / fail path first; a negative result and a failed measurement must not share an output.
+2. Reproduce fixed contract on the real output path (wrapper/entrypoint the consumer sees — last writer).
+3. Symptom gone; assert on the **member list**, never on a total alone.
+4. Runtime parity inside the **shipping artifact** when applicable (deployed image / equivalent) — keep **one** runbook for this check, with the current access profiles, and link it rather than restating commands (profiles change; copies rot).
+5. **Look at the output** (rendered), not only at counts — before/after for visual/geometry changes.
+
+State what each gate can and cannot show. Silence on a living contract rule (comply / revise / record) is not an option.
+
+Also watch for: a **canary that never applied the real perturbation** (instrument sound, experiment wrong — state what production does to the data), and a **structural gate read as semantic** (present/unique/wired ≠ correct; when meaning matters, schedule a human read).
+
+## Document + sanitise
+
+1. Write-once / append-only on shared ledgers: issue note, STATUS update, QA acceptance, next-actions note — add rows; do not rewrite someone else's.
+2. Run **`sanitise-diff` skill** on **added** staged lines (names, ticket IDs in code, secrets, agent self-attribution).
+
+## Review loop
+
+Triage automated reviewer findings like a human’s: fix, follow-up commit, or dismiss **with a stated reason**. Do not merge over unaddressed valid findings.
+
+## Human gate (not tool-to-tool handoff)
+
+Company standard is **Cursor only**. Prepare the branch and next-actions note. Stop at the human gate unless explicitly asked to push/PR/deploy. Releases and stage deploys follow the team's written release / hotfix procedure — human or lead actions, never the agent's. Session continuity = rewrite the rolling entry-point for the *next* Cursor context.

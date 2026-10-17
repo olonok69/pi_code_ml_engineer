@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.venv-win/
+
+# Node
+node_modules/
+
+# Secrets / machine-local
+.env
+.env.*
+!.env.example
+config.env
+IDENTITY.md
+.sanitise-names
+auth.json
+mcp-auth.json
+trust.json
+
+# Indexes / generated noise
+.codegraph/
+.staging-url
+dist/
+events.jsonl
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+~$*.pptx
+
+# The methodology keeps its engineering record under data/ (gitignored by design);
+# the knowledge-graph tests may create data/knowledge-graph/ here.
+data/

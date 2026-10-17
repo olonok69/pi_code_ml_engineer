@@ -1,0 +1,27 @@
+%% Editable source of agents.png (render: uv run --with pillow python examples/subagents/render_agents.py)
+%% Left: Pi's official subagent EXAMPLE extension (not built in): child pi processes, result returns.
+%% Right: parallel pi processes (tmux / pi -p / RPC) — Pi has no agent teams or shared inbox.
+flowchart LR
+  subgraph S["SUBAGENT EXTENSION (example)"]
+    M["Main pi session\n(your context)"]
+    A1["scout / refactor-scout\n(read, grep, find, ls)"]
+    A2["planner / reviewer"]
+    A3["worker\nsingle · parallel · chain"]
+    M -- "task with context" --> A1
+    M -- " " --> A2
+    M -- " " --> A3
+    A1 -- "only the RESULT returns" --> M
+    A2 -- " " --> M
+    A3 -- " " --> M
+  end
+  subgraph T["PARALLEL PI PROCESSES\n(no agent teams in Pi)"]
+    L["You / a script\n(integrator)"]
+    T1["tmux pane: pi"]
+    T2["pi -p / --mode rpc"]
+    P[("Partitioned files / branches")]
+    L <--> T1
+    L <--> T2
+    T1 --- P
+    T2 --- P
+  end
+  S -. "isolate context vs. parallelise work" .- T

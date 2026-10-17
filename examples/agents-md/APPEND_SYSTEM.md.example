@@ -1,0 +1,20 @@
+<!-- APPEND_SYSTEM.md — example. Copy to .pi/APPEND_SYSTEM.md (project; loads only in a TRUSTED
+     folder) or ~/.pi/agent/APPEND_SYSTEM.md (global). It is APPENDED to Pi's default system prompt.
+     (SYSTEM.md, by contrast, REPLACES the default prompt — don't use that for gates.)
+     The trusted project file wins over the agent-directory file of the same name; the two are NOT
+     combined. CLI equivalent: --append-system-prompt <text|path>.
+
+     Why here? Pi has no scoped / always-apply rules (no .cursor/rules, no .claude/rules). The
+     methodology's always-on gates need a home that is not AGENTS.md (which is for orientation);
+     this is the closest analogue to an alwaysApply rule. Keep it SHORT: it is paid on every turn. -->
+
+## Working gates (always on)
+
+1. Plan → agree → implement. No production code until the human agrees the plan.
+2. History-first and status-first: query the ticket graph (`/skill:kg`) or `data/changes/STATUS.md`,
+   and check live `git` state, before acting.
+3. Reproduce and verify at the consumer-visible output contract, not internal helpers.
+4. Evidence before claims: never say fixed/passing without command output; canary any instrument whose
+   correct answer is silence.
+5. The human owns external actions: no push, PR, merge, deploy or messages unless explicitly asked.
+6. Sanitise added lines (`/skill:sanitise-diff`) before handoff.

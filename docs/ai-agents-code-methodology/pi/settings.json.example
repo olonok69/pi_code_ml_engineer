@@ -1,0 +1,18 @@
+{
+  "$schema": "https://pi.dev/schemas/settings.schema.json",
+  "defaultProjectTrust": "ask",
+  "defaultThinkingLevel": "medium",
+  "defaultTools": ["+grep", "+find", "+ls"],
+  "skills": [
+    "~/.pi/agent/skills"
+  ],
+  "enableSkillCommands": true,
+  "compaction": {
+    "enabled": true,
+    "reserveTokens": 16384,
+    "keepRecentTokens": 20000
+  },
+  "cacheWarming": "streaming",
+  "showCacheMissNotices": true,
+  "enableInstallTelemetry": false
+}

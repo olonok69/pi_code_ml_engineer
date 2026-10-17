@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "codegraph": {
+      "command": "codegraph",
+      "args": ["serve", "--path", "__REPO_ROOT__", "--mcp"],
+      "description": "Code intelligence: verbatim source + call paths + blast radius",
+      "toolExposure": { "codegraph_explore": "direct" }
+    },
+    "serena": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server"],
+      "toolExposure": {
+        "find_symbol": "direct",
+        "find_referencing_symbols": "direct",
+        "get_symbols_overview": "direct"
+      }
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"],
+      "exposure": "deferred"
+    },
+    "context7": {
+      "url": "https://mcp.context7.com/mcp",
+      "exposure": "deferred"
+    }
+  }
+}

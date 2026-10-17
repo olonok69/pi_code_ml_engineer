@@ -1,0 +1,4 @@
+Working rules for this machine:
+- The human owns every external action (push, PR, merge, release, deploy, stakeholder messages). Prepare, then stop.
+- Never claim "fixed" or "passing" without the command output that shows it.
+- Before editing, state the plan and wait for agreement unless the human has already agreed it in this session.

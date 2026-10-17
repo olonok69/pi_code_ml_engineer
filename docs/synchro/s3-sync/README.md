@@ -1,0 +1,391 @@
+# Shared `data/` over object storage — sync + read-only mount
+
+**What this replaces.** The travel runbook next door (`../machine-sync/RUNBOOK.md`)
+moves the workspace between two machines by building a tarball and carrying it on a
+USB stick. That works, and it stays as the fallback for a full machine bring-up —
+but it is a *transport*, not a *shared home*. It cannot help when three machines and
+two people all need the same always-current engineering record. This document is
+that shared home.
+
+Sanitised: bucket names, account identifiers, profiles and machine names below are
+placeholders. The structure is the real one.
+
+---
+
+## What is shared, and what is deliberately not
+
+Scope is **engineering knowledge only**:
+
+- the written per-task records (`changes/**/*.md`)
+- the derived ticket knowledge graph (`knowledge-graph/`)
+
+**Not** shared: customer documents, fixtures, captures, rendered artifacts, videos,
+or anything binary and large. That boundary is both a confidentiality line and a
+size line, and it is far easier to widen later than to retract. Widening it needs
+the sign-off of whoever owns the storage account — not a unilateral decision.
+
+---
+
+## Two access modes, and the rule
+
+| | `data-push` / `data-pull` (sync) | `mount-data` (object-storage mount) |
+|---|---|---|
+| Where you work | real local disk, fast | a live view of the shared store |
+| Good for | **writing** records, building the graph, git, grep | **reading**, browsing what teammates have |
+| Concurrency | explicit push/pull; you see what moved | read-only, so nothing to clobber |
+| Caveat | not live — you run it when you want | no locking, no atomic rename, partial writes visible |
+
+> **Write via sync. Read via mount.** The mount is **read-only on purpose.** Object
+> storage has no file locking and no atomic rename, so a writable mount invites
+> corruption that surfaces weeks later as an unexplainable bug. The read-only mount
+> is a safety property, not a limitation to engineer around.
+
+---
+
+## Source of truth vs. derived artifact
+
+**The written records are the source of truth. The knowledge graph is derived from
+them.** Everyone reads the graph; exactly **one machine publishes it**.
+
+Per-task folders almost never collide — people work on different tasks. The single
+genuine contention point in the whole system is the generated graph, because two
+people rebuilding and pushing it will silently clobber each other.
+
+> ### ⚠️ "Derived" is a property of a file, not of a folder
+>
+> An earlier version of this page offered *"rebuild locally and don't share the
+> built graph at all — the graph is cheap to derive"* as the **preferred** option.
+> **That is wrong, and it was corrected the hard way.**
+>
+> It holds only while the rebuild is **lossless**. In practice the generated tree
+> also contains a **hand-authored** file — the curated community names — that
+> nothing regenerates. A rebuild re-derives the graph's internal identifiers from
+> scratch, so the names no longer attach to anything: measured across real rebuilds,
+> pinning fixed dedup *within* a run but continuity *between* runs still only carried
+> ~**37–48%** of **~102** hand-authored names. Recreating them is judgement time, not
+> a command — budget re-labelling into every refresh.
+>
+> Nor is the graph "cheap to derive": a full rebuild is a fan-out of extraction
+> agents over the whole corpus.
+>
+> So classify **per file**, in three categories:
+>
+> | Category | Example | Must it travel? |
+> |---|---|---|
+> | Source | the written records | ✅ yes |
+> | Derived | the built graph, indexes, caches | optional — saves a rebuild |
+> | **Authored, living inside the derived tree** | the curated names overlay | ✅ **yes, always** |
+>
+> The third category is the trap: every rule you wrote about the folder says it is
+> safe to discard.
+
+**The resolution is therefore a single publisher** that owns `knowledge-graph/` as
+its single writer. Everyone else pulls it and never pushes it. "Rebuild locally
+instead" is only safe for a tree that is *purely* derived — check before assuming
+yours is.
+
+**Pairs must move together.** The names overlay is only meaningful against the exact
+graph it was built from, but `aws s3 sync` compares each object independently, so a
+machine can pull a new graph and keep an old overlay. That produces no error — just
+names attached to the wrong clusters. Stamp the overlay with a **fingerprint of the
+graph it was built against** and make the health check exit non-zero when they
+disagree. A per-file sync cannot express atomicity; the consistency check has to
+live in the data.
+
+Enable **versioning on the bucket** either way. It is the recovery net for the day
+someone gets this wrong — but see the expiry caveat in the next section before you
+lean on it.
+
+---
+
+## Roles
+
+| Role | Does |
+|---|---|
+| **Publisher** | Seeds the bucket; rebuilds and publishes the graph; the single writer of `knowledge-graph/` |
+| **Contributor** | Owns their own tasks, pushes their records, **reads** the graph |
+
+The publisher role is pinned to one machine until it is deliberately transferred.
+Transferring it is a documented procedure, not an ad-hoc decision — the point of one
+publisher is lost the moment two machines believe they hold the role.
+
+**How a contributor asks for a rebuild — without any locking.** A contributor who
+changes records does not rebuild; they flag it, and the publisher rebuilds. The flag
+is deliberately **one file per request**:
+
+```bash
+kg_refresh.sh request "added the payment-retry record"   # -> refresh_queue/<utc>-<machine>.request
+./data-push.sh --go
+```
+
+A single shared queue file would hit the same last-writer-wins problem as everything
+else here and silently drop requests. **Distinct keys never collide**, so a queue of
+one-file-per-request needs no coordination whatsoever. The publisher runs
+`kg_refresh.sh queue` before rebuilding and `queue --clear` after the health check
+passes. **`--clear` must delete the consumed keys in the bucket** — a local-only
+archive leaves the originals in the store; the next pull resurrects them everywhere.
+
+**Baton scope.** The publisher baton gates **`knowledge-graph/` only**, not the whole
+push. Contributors upload ticket folders normally; without the baton they see
+`SKIPPED knowledge-graph/` (expected) and still push **`refresh_queue/`**. An earlier
+whole-sync gate blocked both ticket work and the request mailbox — a documented
+contributor loop that silently never left the machine. Before gating a path, enumerate
+what else lives under it.
+
+> **Treat the single publisher as scaffolding, not architecture.** Pinning the rebuild
+> to one person's machine stalls the moment that machine is off, travelling, or
+> mid-task. The queue above is deliberately the *trigger contract*, so the rebuild can
+> later move to a scheduled or event-driven job with **no change to anything
+> contributors do** — the migration swaps the operator, not the interface. What still
+> blocks a fully unattended run is the judgement step: naming the clusters the rebuild
+> could not carry across.
+>
+> **Simulate the role before onboarding into it.** A second `MACHINE_NAME` + empty
+> tree exercises real scripts; a same-box simulation with the publisher's write
+> credentials is not a two-person proof.
+
+---
+
+## Machine identity — how the agent knows what it may do
+
+This is the part that only exists because agents are involved, and it is the easiest
+to skip.
+
+Once the same trail is reachable from several machines with **different roles**, a
+**Cursor** agent session must know *which machine it is on* before it acts.
+Otherwise a contributor machine will helpfully rebuild and republish the
+shared graph — the one thing its role forbids — and be entirely pleased with itself
+for doing so.
+
+Each machine declares its identity in its own `config.env`:
+
+```bash
+MACHINE_NAME=<this-machine>
+MACHINE_ROLE=publisher      # or: contributor
+```
+
+Then:
+
+```bash
+./identity.sh --write        # generates IDENTITY.md
+```
+
+`IDENTITY.md` records the declared role **and runs live checks** — which account are
+we authenticated as, is the bucket reachable, is the mount present. The repository
+`AGENTS.md` (and/or always-on `.cursor/rules`) points at it, so every session reads
+its own role first.
+
+**`IDENTITY.md` is machine-local.** It is gitignored, never synced, and never
+packaged. It is the one file that must *not* be identical everywhere. Re-run
+`identity.sh --write` after any `config.env` change.
+
+---
+
+## The rules a shared store needs
+
+Single-writer and pairs-move-together (above) are the *structural* rules. These are the
+behavioural ones — the ones people break, because nothing stops them.
+
+### ⚠️⚠️ Recovery has an expiry, and users own their own work
+
+Versioning is routinely described as "the recovery net", full stop. That is a half-truth
+worth correcting explicitly, because people plan around it.
+
+A bucket with versioning on will almost always also carry a lifecycle rule expiring
+**noncurrent** versions — 30 days is a common default. So an overwrite is recoverable
+**for 30 days, and only if somebody notices in time**. Nobody is auditing other people's
+files, and there is no backstop on day 31.
+
+State it plainly in onboarding rather than implying a safety net that thins out:
+
+> Push what you changed. Prefer pull before you edit — but if you already have
+> **unpushed** local work, dry-run first: sync does not delete on the way in and will
+> overwrite newer local files with the store's older copy. If something of yours
+> disappears, say so within the month or it is gone.
+
+The alternative — a team that believes storage is durable in a way it is not — produces
+exactly one kind of incident, and it is unrecoverable by the time anyone reports it.
+
+### Shared ledgers are append-only
+
+A handful of files are *shared by nature*: a status ledger, a shipped-work index, an open
+follow-ups list, a test map, a record of what has been told to customers. Everyone writes
+to them.
+
+Object sync is last-writer-wins with no merge, so **rewriting one of these silently drops
+somebody else's line**. There is no conflict, no error, no prompt. Make the rule explicit:
+**add rows, never restructure someone else's**.
+
+This is cheap to *detect* even though it is expensive to prevent. Append-only means a line
+present locally and absent in the incoming copy is either a deliberate deletion or a
+clobber — so a pull-time check that diffs the two and warns has essentially no false
+positives. A few lines of shell, not a merge engine. That check is the visibility that
+versioning does not give you: versioning makes the loss *recoverable*, not *noticed*.
+
+⚠️⚠️ **That check covers one direction, and the damage happens in the other.** We built it, it runs
+on every pull, and work was still destroyed. Measured: two machines edited the status ledger the
+same afternoon; the second push replaced the first wholesale — **11 lines gone, no conflict, no
+error.** A pull-time check cannot see this, because the loss occurs while *pushing*, against a
+copy the pusher never had.
+
+Put plainly: **a pull clobbers you, and you can be made to notice. A push clobbers your colleague,
+and you cannot** — the evidence sits on a machine you never look at. Ours went a full day
+unobserved, and was recovered only because bucket versioning happened to be on.
+
+So guard the push as well. Before uploading a shared file, compare the stored copy against the
+last real sync this machine recorded, and if the store has moved since, **refuse (`exit 4` /
+`REFUSED`)** — name the files and stop. Do not merely warn: a warning inside a 60-line transfer
+preview is exactly the thing that gets scrolled past. Provide `--allow-clobber`, document it, and
+document the reason not to use it in the same breath.
+
+Two refinements that turned out to matter more than the check itself:
+
+- **Compare content, not just timestamps.** The first version would have refused a teammate's very
+  first push after upgrading, on files he had just pulled and held byte-for-byte, because his log
+  had no real pull recorded yet. Ask the question that matters — *would this upload actually change
+  the stored object?* **A guard's false-positive rate is a safety property**: every spurious refusal
+  spends credibility, and the override people learn to reach for is the one that causes the
+  incident.
+- **A per-machine file needs exactly one writer, enforced in the tool.** Splitting the sync log into
+  one file per machine removes contention by design — and our push uploaded *every* machine's file,
+  including its permanently-stale copy of someone else's, rolling that person's record back. The
+  first symptom was not a corrupt file: with his log erased, the dashboard said he had never closed
+  his day. He had. **Before concluding a teammate skipped a process step, check whether your own
+  tooling ate the evidence.**
+
+Course scripts (genericised): [`examples/methodology/s3-sync/`](../../../examples/methodology/s3-sync/).
+Routine that drives them: the Cursor [`day` skill](../../../examples/skills-plugins/.pi/skills/day/SKILL.md)
+(`day start` / `day end` / `day status` / `day baton`). Query the derived index with
+[`kg`](../../ai-agents-code-methodology/cursor/skills/kg/SKILL.md); contributors
+file a rebuild with
+[`kg-refresh`](../../ai-agents-code-methodology/cursor/skills/kg-refresh/SKILL.md)
+(publisher only rebuilds; `--clear` must delete consumed keys in the store).
+
+> ⚠️⚠️ **A safety guard can silently disable the instrument that proves the habit.**
+> A pre-pull snapshot installed its own `trap ... EXIT` to clean up a temp file.
+> Bash keeps **one** EXIT trap, so it replaced the one writing the activity ledger.
+> Dry runs kept logging; every real pull went unrecorded for two days while the
+> dashboard stayed populated. Ask what else claims the same single-slot resource;
+> the real path and the rehearsal path are different code.
+
+### Per-task folders need no coordination at all
+
+The reason this model works without locking is that the bulk of the corpus is partitioned
+by construction: one folder per task, one owner per task. No protocol is needed for the
+90% case. Reserve the ceremony for the genuinely shared files — the derived artifact and
+the ledgers — and let everything else be free.
+
+Design for this deliberately. If your layout forces two people into the same file for
+routine work, no amount of process will save it.
+
+### The shared store is authoritative on divergence
+
+When a local copy and the published copy disagree, the published one wins. "I have it
+locally" stops being an argument the moment someone else's version is the one everybody
+pulls.
+
+This needs saying out loud because the instinct runs the other way — your local copy is
+the one you can see, and it feels more real. A team that has not agreed this in advance
+resolves each divergence by argument instead of by rule.
+
+### Deletion belongs to one role and one tool
+
+The flag that propagates a removal (`--delete`) is the same flag that destroys unpushed
+work from a stale view. Scope it to the publisher role, not to whoever remembers the
+caveat — and even then it is not enough, which is why deletion became a tool of its own.
+
+`aws s3 sync` cannot express "deleted on purpose". A file removed from the store by hand
+is, to every other machine, simply *missing* — so the next push from any of them uploads
+it again. Measured: a 176 MB screen recording, deleted by hand, came back twice in two
+days. The fix is a **deletion list** (tombstones) that the sync scripts read:
+
+- `delete.sh` (publisher only, and only while holding the baton) deletes **one file**
+  and appends a record — path, reason, who, md5, size, version id — to
+  `_deletions.jsonl` in the store, **outside every synced root** (inside one, the first
+  contributor push would replace it with a stale copy). Entries are appended, never edited;
+  `--restore` appends a lifting record.
+- Every **pull** moves a tombstoned file aside into `_prepull/<ts>/deleted/` — never `rm` —
+  and only if its local copy still matches the recorded md5/size. An edited copy is kept
+  and flagged: the person who edited it decides.
+- Every **push** excludes tombstoned paths. A real push that **cannot read** the list
+  refuses (exit 5): without it, it cannot know what must not be uploaded. Only S3's own
+  "no such key" counts as "no deletions yet"; any other failure — including an expired
+  SSO token, whose message says "does not exist" too — is *unreadable*, never *empty*.
+- `delete.sh --check` (run by the publisher's `day start`) lists deleted files that are
+  back in the store and which machine pushed around that time. Report only.
+
+The rule that falls out: **never `aws s3 rm` and never `--delete` by hand** — neither
+tells the other machines.
+
+---
+
+## Daily use
+
+```bash
+# Dry-run is the DEFAULT — nothing transfers until you say --go
+./data-pull.sh              # preview, then:  ./data-pull.sh --go
+./data-push.sh              # preview, then:  ./data-push.sh --go
+
+# Browse the shared store live, read-only
+./mount-data.sh             # mounts at ~/s3-<name>-data
+ls -la ~/s3-<name>-data
+./unmount-data.sh
+```
+
+**On `--delete`.** Passing it mirrors exactly, removing files on one side that were
+deleted on the other. Leave it off by default: the common case is that a teammate is
+pushing while you are, and an exact mirror from a stale local view erases their work.
+Add/update-only is the safe default. Removing a single file from the shared record is
+`./delete.sh` on the publisher (above), not `--delete`.
+
+**Readiness.** A machine is only set up when `./validate.sh` prints `MACHINE READY`.
+Don't skip it — it is what catches the half-configured profile that otherwise fails
+on first push.
+
+---
+
+## Bring-up order
+
+Order matters: the bucket must be seeded before anyone can pull from it.
+
+1. **Publisher first** — install, seed the bucket, first graph publish.
+2. **Each contributor** — install, set `MACHINE_NAME`/`MACHINE_ROLE`, `identity.sh
+   --write`, then `./validate.sh` until it reports ready.
+
+Each machine sets its own `LOCAL_DATA` to that machine's `data` path. Paths differ
+per machine and are the most common setup mistake — derive them, don't copy them
+from someone else's config (the "discover, don't assume" rule from the travel
+runbook applies here unchanged).
+
+---
+
+## Before the first shared push — read this
+
+- **Confidentiality.** Only records and the graph are in scope. Do not widen to
+  customer data without the storage owner's sign-off. Tool output that collects customer
+  documents in bulk (e.g. an evidence-capture `_evidence/` folder) is excluded from the
+  push in `JUNK_ARGS`; only curated items move into a ticket folder.
+- **Secrets.** Scrub the records for embedded credentials **before** the first push.
+  This is not hypothetical: investigation notes routinely capture signed URLs and
+  tokens *on purpose*, as evidence of a bug — and those are exactly the strings you
+  do not want in shared storage. Run the sanitisation scan over the whole trail once,
+  not just over a diff.
+- **Versioning.** Turn it on before the first push, not after the first accident — and
+  read its retention policy at the same time. A default lifecycle rule that expires
+  noncurrent versions turns "recoverable" into "recoverable for N days".
+
+---
+
+## Why this is in the course
+
+It closes the honest gap in the "durable trail" story. A trail that lives in a
+gitignored directory on one laptop is a *personal* trail: it cannot be linked from a
+ticket, it does not survive the machine, and the moment a second person joins, the
+"single durable record" quietly becomes two divergent ones. Object storage plus an
+operating model — narrow scope, write-via-sync, read-only mount, one publisher for
+derived artifacts, and an identity each machine reads before acting — is what turns
+it into a team asset.
+
+The generic principle, with no tooling attached, is in
+[`../../ai-agents-code-methodology/TECHNICAL.md`](../../ai-agents-code-methodology/TECHNICAL.md)
+§7.

@@ -1,0 +1,43 @@
+# Agent orientation (Pi)
+
+This repository uses the **AI-agent methodology** (plan → agree → implement; verify at the
+consumer-visible contract; human owns external actions).
+
+> Pi loads this file from the working directory **and every parent directory** (plus the global
+> `~/.pi/agent/AGENTS.md`). It does **not** load `AGENTS.md` files in sub-directories, has no scoped
+> rules and no `@imports` — so keep this file small and made of pointers. If a `CLAUDE.md` sits next to
+> this file, Pi reads **only this one** (one file per directory; `AGENTS.md` beats `CLAUDE.md`).
+
+## Read first every session
+
+1. Machine role: `data/changes/s3-sync/IDENTITY.md` (if it exists) — read it before any shared write.
+2. Live snapshot: `data/changes/STATUS.md`.
+3. Danger zones: `data/changes/SHARP_EDGES.md`.
+4. Full pack: `data/changes/ai-agent-methodology/PI_ADAPTATION.md`.
+
+## Gates (non-negotiable)
+
+1. **Plan → agree → implement.** Write the plan (`/skill:methodology-plan`) and stop for agreement.
+2. **History-first and status-first:** `/skill:kg <ticket|topic>` (or STATUS fallback), then `git` / `gh` state.
+3. **Contract-first:** reproduce and verify at the consumer-visible output, not an internal helper.
+4. **Evidence before claims;** canary any instrument whose correct answer is silence.
+5. **Human owns external actions:** no push / PR / merge / deploy / stakeholder message unless asked
+   in this session. (A global `block-external-git.ts` extension enforces the git part.)
+6. **Sanitise added lines** before handoff: `/skill:sanitise-diff`.
+
+## Tool order (cheap → expensive, deterministic → probabilistic)
+
+- `codegraph_explore` first for "what is this / who calls it / blast radius"; treat its source as already read.
+- Serena `find_referencing_symbols` before any rename or delete.
+- grep / read only for literals, configs and docs.
+- Deterministic oracle (parser, schema check, `_diag_*.py`) before a model-driven diagnosis.
+- Playwright against the consumer-visible contract; Docker for deployed-image parity.
+
+## Do not load by default
+
+Per-ticket writeups, playbooks and long history under `data/changes/<id>/` — open on demand only.
+
+## Output contract
+
+Define here (one paragraph): what downstream consumers actually observe (API JSON, UI field, event,
+artifact). All bugs are reproduced and verified against that surface.

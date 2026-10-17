@@ -1,0 +1,250 @@
+# A real runbook: syncing the workspace across machines
+
+> **Status note (updated).** This tarball + USB runbook is still valid and is
+> the path for a **full bring-up** of a new machine. But it is **no longer** how
+> day-to-day engineering-record sync works: that moved to
+> **shared storage (S3)**. Jump to
+> [§ Evolution: from tarball to shared storage](#evolution-from-tarball-to-shared-storage)
+> at the end for what changed and why. Everything below still reads the same: the
+> principles it illustrates (lean context, ops with guardrails, "discover, don't assume")
+> did not change.
+>
+> ## Pi adaptation (read me first)
+>
+> This runbook was born in a **Claude Code** environment (`~/.claude`, skills `/kg`, `CLAUDE.md`).
+> The **principles** (asymmetric sync, agent with guardrails, evidence, human on externals) apply
+> the same in Pi. What changes:
+>
+> | Claude Code | Pi |
+> |---|---|
+> | Pointer in `CLAUDE.md` | Pointer in `AGENTS.md` (Pi does **not** read `~/.claude/CLAUDE.md`) |
+> | Bundle of `~/.claude` (skills + memory) | Bundle `~/.pi/agent/` — settings, `mcp.json`, extensions, skills, prompts, `AGENTS.md`. Pi has **no** built-in memory |
+> | `codegraph` MCP in `~/.claude.json` | Re-pin the absolute `--path` in `~/.pi/agent/mcp.json` / `.pi/mcp.json` on the laptop (no `${workspaceFolder}` variable is documented) |
+> | `/kg-refresh` Claude skill | Same `kg_refresh.sh` scripts; `kg` ports as `/skill:kg`; the extraction step of `kg-refresh` needs subagents (extension, or run it from Claude Code) |
+>
+> ⚠️ Never bundle `~/.pi/agent/auth.json`, `mcp-auth.json` or `trust.json`: credentials and
+> machine-local trust, like `.aws`. Sessions live in `~/.pi/agent/sessions/` — carry them only if you
+> want them. Bring `data/`, git repos, and reinstall the Pi surface (methodology pack `pi/`).
+>
+> ---
+>
+> Real procedure (sanitized) to move the WORKSPACE workspace between the **main machine** and a
+> **laptop** (travel). A good example of three methodology things at once:
+> **durable memory loaded on demand**, **agent-driven ops with guardrails**, and
+> **"discover, don't assume"**. Lives under `data/` (gitignored) — machine/ops content, never
+> committed.
+>
+> Always-on orientation does **not** hold the full runbook: there is a **one-line pointer** ("moving the
+> workspace main ⇄ laptop? load `data/machine-sync/RUNBOOK.md`"). It loads **only when needed**.
+
+## The idea: asymmetric sync
+
+| Direction | Strategy | Why |
+|---|---|---|
+| **Outbound** (main → laptop, before travel) | **FULL COPY** | One tarball carries the whole workspace + home config; the laptop boots from an identical clean state. |
+| **Inbound** (laptop → main, on return) | **DELTA ONLY** | Code is already on GitHub → bring with `git fetch`. Only gitignored `data/` docs (a few MB) travel in a small tarball. |
+
+Transfer medium: **USB** (mounts in WSL as `/mnt/<letter>`). A FAT32 USB does not preserve
+Linux permissions/symlinks — fine: everything goes inside the `.tar.gz`, which preserves them internally.
+
+## Cross-cutting principle: "discover, don't assume"
+
+Paths and dotfile layout **differ by machine**. Commands **derive** the workspace root instead of
+hardcoding it:
+
+```bash
+WS=$(ls -d /mnt/*/WORKSPACE 2>/dev/null | head -1)   # derive the root, don't assume it
+echo "workspace: $WS"
+# Re-check "machine facts" when time passes (drift):
+ls -ld /home/$USER/.aws /home/$USER/.gnupg /home/$USER/.ssh /home/$USER/.claude
+```
+
+A **"machine facts" table** documents what varies (workspace root, whether `~/.aws` is a symlink or
+real dir, whether `~/.gnupg` exists, the repo list, last tar size) — with a "confirm before you
+trust." It drifts over time: the repo list **grows** (a new repo was added without touching the
+command, because `-C` takes the whole directory), and the tar size too. Re-verify it every trip.
+
+## Outbound — full copy (real command, sanitized)
+
+Three fixes born from real failures are baked in: correct `-C`, `-h` to **dereference the
+`.aws` symlink** (otherwise the laptop gets a dead link and AWS CLI unconfigured), and skip
+`.gnupg` if it does not exist (otherwise `tar` errors):
+
+```bash
+WS=$(ls -d /mnt/*/WORKSPACE 2>/dev/null | head -1)
+STAMP=$(date +%Y%m%d)
+
+tar -czhf ~/ws-migration-$STAMP.tar.gz \
+  --exclude='*/node_modules' --exclude='*/.codegraph' \
+  --exclude='*/.venv' --exclude='*/.venv-win' \
+  --exclude='*/__pycache__' --exclude='*/.pytest_cache' \
+  --exclude='*/.ruff_cache' --exclude='*/.mypy_cache' --exclude='*.pyc' \
+  -C "$(dirname "$WS")" "$(basename "$WS")" \
+  -C /home/$USER .claude .aws .ssh
+ls -lh ~/ws-migration-$STAMP.tar.gz   # expect ~1 GB+ (grows); if KB, the -C was wrong
+```
+
+**Copy to USB — real gotchas (from a trip):**
+
+- **WSL does not auto-mount a USB.** A USB you plug in *after* starting WSL does not appear alone under
+  `/mnt/<letter>` (the mount point exists but empty). Mount it by hand:
+  ```bash
+  sudo mount -t drvfs F: /mnt/f    # replace with the real USB letter in Windows
+  ```
+- **Verify byte for byte before ejecting.** The mount is 9p (slow); after `cp`, `sync` and compare exact
+  sizes — nothing like "it looks like it fits":
+  ```bash
+  cp ~/ws-migration-$STAMP.tar.gz /mnt/f/ && sync
+  stat -c %s ~/ws-migration-$STAMP.tar.gz /mnt/f/ws-migration-$STAMP.tar.gz   # must match
+  ```
+- **Size the USB upward.** The bundle **grows** as repos are added (excluding venvs/caches: ~0.9 GB →
+  ~1.5 GB in a few weeks). A 4 GB USB fits *one* bundle, with no margin for two.
+- **Keep a prior full tar** as a safety net before any extract on the destination.
+
+On the laptop: **park** (rename, don't delete) any prior workspace, extract, and **recreate the
+excluded heavies** (`python -m venv`, `npm install`) per repo you will run. The AWS CLI **binary**
+does **not** go in the bundle (system install) — reinstall on the destination and do
+`aws sso login` once (the cached token travels expired). Same for **navigation tooling**: the
+`.codegraph/` index is excluded (absolute paths, machine-local) and an idempotent `target-setup.sh`
+reinstalls the CodeGraph CLI, updates GSD if behind, **fixes the MCP `--path`** to the real laptop
+root, and rebuilds the index (`codegraph init`).
+
+## Inbound — delta only (the return)
+
+No full copy on the way back: it would clobber whatever the main machine did meanwhile.
+
+1. **Code** → normal PRs from the laptop; on main, only `git fetch origin` (read-only).
+2. **Gitignored `data/` docs** → the only physical that travels; packed from the repo root
+   (repo-relative paths) and accompanied by `INSTRUCTIONS.md` + `MANIFEST.txt`.
+
+## Two gaps closed by a few subcommands (bring-up + memory)
+
+A real case: the workspace carries a **ticket knowledge graph** (skill `kg` / `/kg` in Claude, see
+[`../../docs/KNOWLEDGE_GRAPH.md`](../../docs/KNOWLEDGE_GRAPH.md)). Travel surfaces two gaps solved
+with idempotent subcommands, not easy-to-forget manual steps:
+
+- **Bring-up from scratch (new laptop).** The bundle brings the already-built graph and some tooling,
+  but **not** the `graphify` package or a correct interpreter. One command fixes it:
+  ```bash
+  bash data/knowledge-graph/kg_refresh.sh bootstrap   # install package, pin interpreter, smoke-test kg
+  ```
+  In Pi: also re-install `~/.pi/agent/` (MCP `--path`, skills, the git-block extension) if that machine
+  did not have it, then `pi mcp list` as the smoke check.
+- **Claude memory does not travel in the delta.** Classic inbound excludes `~/.claude`. Pi has no
+  memory feature to sync at all: decide explicitly what travels (`data/changes/`, snapshots):
+  ```bash
+  bash data/knowledge-graph/kg_refresh.sh snapshot-memory
+  # on main:
+  bash data/knowledge-graph/kg_refresh.sh restore-memory
+  # then /kg-refresh (Claude Code) — or /skill:kg-refresh in Pi with a subagent extension installed
+  ```
+
+For the **laptop agent**, a single entry point —`LAPTOP_START_HERE.md`— orchestrates: restore
+the bundle → `bootstrap` → orientation (`AGENTS.md` / rules, skill `kg` history-first) → delta back.
+The graph is a **derived** artifact: it is rebuilt where the current corpus is. ⚠️ **But the curated
+names overlay does travel both ways** — it lives inside the generated tree and nothing regenerates it,
+so rebuilding without it leaves every community unnamed (see the rules table at the end).
+
+## Landing is agent-driven — with guardrails
+
+The delta's `INSTRUCTIONS.md` is written **for a coding agent** on the main machine. Its only
+job is to **land the delta safely**, not to implement anything. Excerpts (sanitized):
+
+> *"You are an agent on the MAIN machine. Your ONLY job is to land this delta safely. You are NOT
+> implementing features, NOR merging PRs, NOR pushing."*
+
+Mandatory guardrails:
+
+- **Non-destructive only.** No `rm -rf`/reset/overwrite except as specified. **Never two file-moving
+  operations at once** on a Windows mount `/mnt/c|d` (a prior session lost a
+  workspace to a concurrent `rm`/`chmod` there).
+- **No remote git writes.** No commit/push/merge/PR. `git fetch` (read-only) is the only network op.
+- **Backup before overwrite.** The only file the delta may clobber is `STATUS.md`: copy to
+  `STATUS.md.mainbak` **first**, then `diff`.
+- **STOP and ask** if a "STOP condition" holds (e.g. the `diff` reveals the main machine
+  made its **own** edits to `STATUS.md` → it was not asleep → do not clobber; restore and ask).
+- **Discover paths** (Step 0): `find … -name sample-service`, do not assume the path.
+- **Verify and report**: count expected files, PR states, and summarize without having made any
+  commit/push.
+
+```bash
+# STATUS.md reconciliation — with judgment, not blind:
+cp data/changes/STATUS.md data/changes/STATUS.md.mainbak   # backup FIRST
+tar -xzf "$TARBALL" -C "$REPO"                             # paths relative to repo root
+diff data/changes/STATUS.md.mainbak data/changes/STATUS.md # only additions? -> keep the new
+#                                                            main had its own edits? -> STOP
+```
+
+## Why this is a good talk example
+
+It gathers methodology principles in an **ops** task, not code:
+
+- **Durable memory, on demand:** the runbook is not in always-on orientation; there is a pointer.
+- **The human owns externals:** the agent lands the delta but does **not** push/merge; and stops if
+  there is ambiguity.
+- **Evidence before claims:** count files, `diff`, PR states — report facts.
+- **Non-destructive + "discover, don't assume":** rename instead of delete; derive paths.
+
+> Full detail (every step, the machine-facts table, `hash -r` and CLI shadowing
+> gotchas) in the project's original `RUNBOOK.md`. Here goes the reusable, sanitized part.
+
+## Evolution: from tarball to shared storage
+
+The runbook above solves **transport** between two of your machines. It does not solve
+**sharing**. As soon as a third machine and a second person appear, three
+costs become obvious:
+
+- The record lives in a gitignored directory → **cannot be linked** from a
+  ticket, a PR, or an acceptance doc: the path only resolves on your machine.
+- Moving between machines degenerates into *pack everything and copy it*: slow, easy to
+  forget, and silently incomplete.
+- Each teammate builds their **own private index** of the same supposedly shared
+  history. The "single durable record" ceases to exist as soon as
+  there are two people.
+
+The answer is to put the record in **shared object storage**, with an
+operating model. The model matters more than the technology:
+
+| Rule | Why |
+|---|---|
+| Scope grows **in reviewed phases** | It started narrow (`changes/**/*.md` + the graph) and widened in reviewed phases — **with the owner signing off each step**. Widening is easy; retracting is not. ⚠️ **Every widening is a security event**: scan first, **canary the scanner**, then **reconcile** (a clean transfer report only says *"what I was asked to send, I sent"*). |
+| **Write via sync, read via read-only mount** | Object storage has **no** locking or atomic rename. A writable mount invites corruption that shows up weeks later. |
+| **Dry-run by default**, explicit `--go`; `--delete` separate | The normal case is a teammate pushing at the same time; an exact mirror from a stale local view **deletes their work**. |
+| **Docs are the source of truth; the graph is derived** | Per-ticket files almost never collide. The generated graph is the **only** real contention point → **one** machine publishes it. ⚠️ "Rebuild locally" is only safe if the generated tree is *purely* derived — see the note below. |
+| **"Derived" is a property of the file, not of the folder** | Inside the generated tree lives a **hand-authored** file (the curated community names) that nothing regenerates: on a rebuild, **<1%** survived. Classify per file — *source* / *derived* / *authored inside derived* — and treat the third as source. |
+| **Pairs must move together** | The names overlay is only meaningful against the graph it came from, but sync compares **object by object** → new graph + old names = names glued to the wrong community, **with no error**. Stamp the overlay with a **fingerprint of the graph** and make the health check fail loudly. |
+| **Coordinate without locks** | To request a rebuild, each contributor writes **their own file** in a queue (`refresh_queue/<utc>-<machine>.request`). Distinct keys never collide; a shared queue file would be lost to last-writer-wins. It is also the same contract a scheduled job will consume. |
+| ⚠️⚠️ **Recovery EXPIRES — and users own their own work** | Versioning almost always **expires noncurrent versions after 30 days**. Recoverable **for 30 days, and only if somebody notices**. Onboarding literal: *pull before you edit, push what you changed, and if something of yours disappears, say so within the month or it is gone.* |
+| **Shared ledgers are append-only** | Last-writer-wins with no merge: **rewriting one silently drops somebody else's line**. Add rows; never restructure someone else's. A pull-time warning has essentially no false positives — the **visibility** versioning does not give you. ⚠️⚠️ **Guard BOTH directions**: that check covers pull; the damage happens on **push** (`exit 4` / `REFUSED`; do not reach for `--allow-clobber`). |
+| **The shared store wins on divergence** | *"I have it locally"* stops being an argument once someone else's version is the published one. Agree it **in advance**. |
+| **Each machine declares its identity** | See below: this is what is specific to working with agents. |
+| **Habit = `day` skill + scripts** | "Pull at start / push at end" needs a callable routine, not a paragraph: [`../skills-plugins/.pi/skills/day/`](../skills-plugins/.pi/skills/day/) + [`s3-sync/`](./s3-sync/). |
+
+### What is specific to agents: the machine has a role
+
+This detail only appears when the same record is reachable from several machines
+with **different permissions**, and it is the easiest to miss: an agent session
+must know **which machine it is on and what it is allowed to do** *before* acting. If
+not, a *contributor* machine will rebuild and republish the shared graph —
+exactly the one thing it must not do — and report it as work well done.
+
+The solution is small: each machine declares `MACHINE_NAME` and `MACHINE_ROLE` in its
+config, a **machine-local** `IDENTITY.md` is generated (with live checks: which
+account is authenticated, whether the bucket responds, whether the mount is up), and the
+repo's `AGENTS.md` **points at it**, so every
+session reads its own role first. `IDENTITY.md` is the only file that **must not**
+be the same everywhere: gitignored, never synced, never packed.
+
+> Full sanitized runbook (access modes, roles, bring-up order, checklist
+> before the first push): [`../../docs/synchro/s3-sync/README.md`](../../docs/synchro/s3-sync/README.md).
+> The generic principle, without tools:
+> [`../../docs/ai-agents-code-methodology/TECHNICAL.md`](../../docs/ai-agents-code-methodology/TECHNICAL.md) §7.
+
+### What still holds from the tarball
+
+Full bring-up of a new machine. Shared storage brings the
+**docs and the graph**; it does not bring the workspace, nor the agent surface (`~/.pi/agent/` /
+`.pi/`), nor venvs, nor the navigation index. For that the bundle +
+`target-setup.sh` above remains the path — and the agent-driven landing
+guardrails (non-destructive, no remote writes, backup before
+overwrite, STOP on ambiguity) apply the same.

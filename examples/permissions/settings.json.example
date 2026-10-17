@@ -1,0 +1,19 @@
+{
+  "$schema": "https://pi.dev/schemas/settings.schema.json",
+
+  "defaultProjectTrust": "ask",
+  "defaultTools": ["-write"],
+
+  "compaction": {
+    "enabled": true,
+    "reserveTokens": 16384,
+    "keepRecentTokens": 20000
+  },
+
+  "cacheWarming": "streaming",
+  "showCacheMissNotices": true,
+
+  "skills": ["~/.claude/skills/kg", "~/.claude/skills/day"],
+
+  "enableInstallTelemetry": false
+}

@@ -1,0 +1,79 @@
+# .github/workflows/pi-review.yml
+#
+# ⚠️ PATTERN, NOT AN OFFICIAL ACTION. Pi publishes no GitHub Action and no Bugbot-style PR reviewer
+# (NOT DOCUMENTED, checked 2026-10-17 against Pi 1.3.0). This workflow is the course's pattern and has
+# NOT been run in CI. It uses only documented CLI pieces: print mode, --no-session, --approve, an
+# environment API key, and </dev/null.
+#
+# Design choice that follows the methodology: the agent job is READ-ONLY (contents: read) and only
+# produces a report artifact. Posting to the PR is a separate job behind a GitHub "environment" with
+# required reviewers — a human approves before anything external happens.
+name: Pi review (pattern)
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      PI_OFFLINE: "1"              # deterministic runs: no catalogue/network extras
+      PI_SKIP_VERSION_CHECK: "1"
+      PI_TELEMETRY: "0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.19"   # npm install requires Node >= 22.19
+
+      - name: Install Pi (pinned)
+        run: npm install -g --ignore-scripts @earendil-works/pi-coding-agent@1.3.0
+
+      - name: Readiness gate
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: pi auth check --provider anthropic --json   # exits 0/1/2
+
+      - name: Diff to review
+        run: git diff "origin/${{ github.base_ref }}...HEAD" > pr.diff
+
+      - name: Pi review (print mode)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PI_REVIEW_MODEL: ${{ vars.PI_REVIEW_MODEL }}   # e.g. anthropic/<model-id> — set as a repo variable
+        # --tools read,grep,find,ls : read-only review, no bash/edit/write
+        # --approve                 : print mode cannot show the trust prompt; without it .pi/ is skipped
+        # </dev/null                : [TESTED] gotcha — a never-closed non-TTY stdin makes pi -p wait for EOF
+        # print mode exits non-zero on error / aborted / length, so a failed run fails the step
+        run: |
+          pi -p --no-session --approve \
+             --model "$PI_REVIEW_MODEL" \
+             --tools read,grep,find,ls \
+             "Review the diff in pr.diff for bugs and security issues. Cite file:line. Do not suggest style changes." \
+             </dev/null > review.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pi-review
+          path: review.md
+
+  post:
+    needs: review
+    runs-on: ubuntu-latest
+    environment: human-approval     # configure required reviewers on this environment
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: pi-review
+      - name: Post review comment (after a human approved the environment)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --body-file review.md

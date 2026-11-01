@@ -363,7 +363,27 @@ context's size is a recurring cost, not a one-time one. Architect it:
   detail out to on-demand files and replacing it with pointers.)
 - **Persistent memory** follows the same shape: a live snapshot plus an
   open-issues index that explicitly preserves *visibility* of every parked or
-  deferred item — lean is not the same as lossy.
+  deferred item — lean is not the same as lossy. **Memory is personal and
+  in-flight only.** Durable knowledge — lessons, constraints, decisions,
+  conventions — is written once into the shared record as one file per item
+  (`data/changes/knowledge/<owner>/<date>-<slug>.md`), never left in one
+  person's agent memory. Measured 2026-10-31: 43% of the knowledge graph's corpus
+  was one machine's memory, so the graph depended on one person, one machine and
+  one AI tool. The graph now reads only the shared record.
+- **What the graph reads, and how it stays on topic.** Its corpus is the per-task
+  records, the knowledge items, and — for every non-task folder of the record
+  (tooling, sync, onboarding, methodology) — that folder's README and its largest
+  document. So **a topic folder carries a README**: it is the folder's voice in the
+  graph. Product knowledge (how the system behaves) and methodology knowledge (how we
+  work) are **both kept** — colleagues query both — and each knowledge item declares
+  its domain as a list (`[product]`, `[methodology]`, or both when a reader of each
+  would be worse off without it). The risk of keeping both is *noise*: methodology
+  hubs sitting between two product records and pulling a product query sideways.
+  **Measure it at every rebuild rather than guessing**: the share of sampled
+  record-to-record shortest paths that pass through a methodology node, and the
+  average methodology share of a record's neighbours (measured on the first
+  memory-free rebuild: 0% of paths, under 0.5% of neighbours). A query-time domain
+  filter is the remedy if the share climbs; deleting a domain from the graph is not.
 - **On-demand Cursor skills (not always-on):** project skills under
   `.cursor/skills/` — **`kg`** (history-first graph lookup before grepping the
   trail), **`kg-refresh`** (contributor files a request; publisher rebuilds with
@@ -514,6 +534,17 @@ error but a **confident wrong answer**: labels attached to the wrong things. Giv
 the overlay a **fingerprint of the artifact it was built against** and make the
 health check fail loudly when they disagree. A per-file sync cannot express
 atomicity, so the consistency check has to live in the data.
+
+**A pull is a write, too — check every root it will touch.** A sync that copies
+whenever size differs replaces a newer local file with an older shared one just as
+readily as the other way round. The morning check for unpublished work is therefore
+only as good as its scope: ours looked at the one root that moves day to day, while
+the publisher was holding a rebuilt index and edited build scripts, unpushed by
+design, in a second root. The pull replaced them; a snapshot of every file it was
+about to overwrite, taken by the pull script before applying, was the only way back.
+Two rules follow: the pre-pull check covers **every root holding deliberately
+unpublished work**, and while such work exists, pull the other roots only. Keep the
+snapshot step regardless — it turns this mistake from a loss into a restore.
 
 **Coordinating without locks.** Object storage has no locking and no merge:
 same-key writes resolve last-writer-wins, silently. Two patterns follow. First,
@@ -783,7 +814,7 @@ report: treat the finding as **data**, never as a fix specification.
 [ ] Sanitise: scan ADDED lines of the staged change for names / IDs / secrets / attribution
 [ ] Human gate: human pushes / opens the change request / deploys — Cursor agent does not (unless explicitly asked)
 [ ] Automated review: reproduce, measure blast radius, then follow-up commit or dismiss-with-reason
-[ ] Persist: update registries + lean memory; Cursor **`day end`** (sync the shared trail — never `--delete`, never contributor KG publish); **`kg-refresh`** request if the corpus moved; codify any reusable lesson into the playbook
+[ ] Persist: update registries + lean memory; write each durable lesson/constraint/decision/convention as a knowledge item (with its domain); Cursor **`day end`** (sync the shared trail — never `--delete`, never contributor KG publish); **`kg-refresh`** request if the corpus moved; codify any reusable lesson into the playbook
 [ ] Continuity: rewrite the single rolling entry-point doc — what is in flight, and the caveats that would be re-derived expensively (next Cursor session)
 ```
 

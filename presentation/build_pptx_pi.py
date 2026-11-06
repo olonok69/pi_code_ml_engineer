@@ -4,13 +4,16 @@
     uv run --with python-pptx --with pillow python presentation/build_pptx_pi.py
     # or: pip install python-pptx pillow && python presentation/build_pptx_pi.py
 
-36 slides 16:9 in three parts (1 Pi · 2 methodology · 3 ticket knowledge graph).
-Slide 34 embeds `presentation/kg_graph.png`, produced by `capture_kg_graph.py`.
+37 slides 16:9 in three parts (1 Pi · 2 methodology · 3 ticket knowledge graph).
+Slide 35 embeds `presentation/kg_graph.png`, produced by `capture_kg_graph.py`.
+Page numbers come from the slide's position in `SLIDES` (the `page` arguments of the
+`slide_NN()` functions are historical names, not the printed number).
 
 Adapted from the Cursor volume's `build_pptx_cursor_en.py`: the visual system and the
 components are unchanged; only the content layer (one `slide_NN()` per slide) differs.
 Every Pi claim comes from `docs/research/PI_FINDINGS_2026-10-17.md` (Pi 1.3.0,
-verified 2026-10-17 — Pi moves fast, re-check before reuse).
+verified 2026-10-17) and `docs/research/PI_UPDATE_2026-11-06.md` (delta to Pi 1.5.0) —
+Pi moves fast, re-check before reuse.
 
 The file is organized in three layers:
 
@@ -140,18 +143,19 @@ def page_number(slide, n):
     line(slide, 11.8, 7.02, 1.2, 0.35, [R(str(n), 9.5, DIM, True)], align=PP_ALIGN.RIGHT)
 
 
-def chrome(prs, eyebrow, title, page):
-    """Content slide: left bar, eyebrow, title, rule, and footer."""
+def chrome(prs, eyebrow, title, page=None):
+    """Content slide: left bar, eyebrow, title, rule, and footer.
+    The printed page number is the slide's position in the deck."""
     slide = new_slide(prs)
     line(slide, 0.7, 0.55, 11.0, 0.4, [R(eyebrow, 12, ACCENT, True)])
     line(slide, 0.68, 0.92, 12.0, 1.1, [R(title, 30, TEXT, True)])
     rect(slide, 0.72, 1.72, 1.1, 0.045, ACCENT)
     line(slide, 0.7, 7.02, 8.0, 0.35, [R(FOOTER, 9.5, DIM)])
-    page_number(slide, page)
+    page_number(slide, len(prs.slides))
     return slide
 
 
-def part_divider(prs, part, title, subtitle, chips, page):
+def part_divider(prs, part, title, subtitle, chips, page=None):
     """Part divider: stripes, part number, large title, and index chips."""
     slide = new_slide(prs, banded=True)
     line(slide, 1.0, 1.3, 11.0, 0.5, [R(part, 16, ACCENT, True)])
@@ -164,7 +168,7 @@ def part_divider(prs, part, title, subtitle, chips, page):
         rect(slide, x, y, 5.7, 0.52, PANEL, BORDER)
         line(slide, x + 0.25, y + 0.05, 5.3, 0.42, [R(text, 12.5, TEXT)],
              anchor=MSO_ANCHOR.MIDDLE)
-    page_number(slide, page)
+    page_number(slide, len(prs.slides))
     return slide
 
 
@@ -319,8 +323,8 @@ def slide_01(prs):
     rect(slide, 1.02, 4.2, 1.4, 0.05, ACCENT)
     tb(slide, 1.0, 4.45, 11.5, 1.7, [
         [R("PART 1 — ", 15, ACCENT, True),
-         R("Pi: install · modes · AGENTS.md · safety by design · sessions · context & "
-           "caching · MCP · skills · subagents · extensions · automation", 13.5, MUTED)],
+         R("Pi: install · modes · local models · AGENTS.md · safety by design · sessions · "
+           "context & caching · MCP · skills · subagents · extensions · automation", 13.5, MUTED)],
         [R("PART 2 — ", 15, BLUE, True),
          R("The methodology (tool-agnostic): gated flow · CodeGraph / Serena / GSD · "
            "transfer to Pi · ops (machine-sync + S3)", 13.5, MUTED)],
@@ -330,7 +334,8 @@ def slide_01(prs):
     ], sa=8)
     line(slide, 1.0, 6.7, 11.0, 0.4,
          [R("Course volume 3 (after Claude Code and Cursor): verified against pi.dev/docs "
-            "on 2026-10-17, Pi 1.3.0 — Pi moves fast, re-check before reuse.", 11, DIM)])
+            "on 2026-10-17 (Pi 1.3.0), updated 2026-11-06 for Pi 1.5.0 — re-check before reuse.",
+            11, DIM)])
 
 
 def slide_02(prs):
@@ -346,7 +351,7 @@ def slide_02(prs):
                  anchor=MSO_ANCHOR.MIDDLE)
 
     column(0.7, 1.95, "PART 1 · Pi", ACCENT, [
-        "01  Install, auth, modes, models",
+        "01  Install, auth, modes, models — and local",
         "02  Memory, permissions (by design), sessions",
         "03  Context: window, compaction, prompt caching",
         "04  MCP — built in since 0.99",
@@ -370,7 +375,7 @@ def slide_03(prs):
     part_divider(
         prs, "PART 1", "Pi",
         "The tool: a minimal terminal agent — what it ships, and what it leaves to you.",
-        ["01 · Install, auth, modes", "02 · Memory, permissions, sessions",
+        ["01 · Install, modes, local models", "02 · Memory, permissions, sessions",
          "03 · Context and prompt caching", "04 · MCP",
          "05 · Skills and packages", "06 · Subagents",
          "07 · Extensions + automation"],
@@ -388,7 +393,7 @@ def slide_04(prs):
         ("3", "Auth: /login or env vars",
          "OAuth or API key → ~/.pi/agent/auth.json · ANTHROPIC_API_KEY, OPENAI_API_KEY…"),
         ("4", "~40 providers + local",
-         "Bedrock, Vertex, Azure, OpenRouter… · llama.cpp (/llama), Ollama via models.json"),
+         "Bedrock, Vertex, Azure, OpenRouter… · llama.cpp (/llama), Ollama via models.json → slide 6"),
     ]
     for i, (badge, title, desc) in enumerate(cards):
         x = 0.7 if i % 2 == 0 else 6.815
@@ -438,6 +443,38 @@ def slide_05(prs):
     ], ls=1.1)
     quote(slide, "One binary, five surfaces — the TUI for you, -p / JSON / RPC / SDK "
                  "for everything else.")
+
+
+def slide_05b(prs):
+    """Local models on a 4 GB GPU (added 2026-11-06)."""
+    slide = chrome(prs, "PART 1 · 01 · LOCAL MODELS",
+                   "A 4 GB GPU: small model, small agent")
+    label(slide, 0.7, 1.91, 6.0, "Route A — llama.cpp router (built into Pi)")
+    code_block(slide, 0.7, 2.25, 6.0, 2.05, [
+        "llama serve --models-preset qwen3.5-4b.ini \\",
+        "  --host 127.0.0.1 --port 9931",
+        "pi --tools read,bash,edit,write --no-mcp",
+        "/login llama.cpp   /llama   /model",
+        ("# Route B: models.json → Ollama / LM Studio", MUTED),
+    ])
+    card(slide, 6.95, 1.91, 5.7, 2.4, "What fits 4 GB VRAM", [
+        "Qwen3.5-4B · IQ4_XS ~2.7 GB or Q4_K_M ~3.0 GB",
+        "no-mmproj · 16–32K context · q8_0 KV cache",
+        "7–9B models → 8 GB tier (or slow CPU offload)",
+        "Expect scoped edits, not multi-file plans",
+    ], ACCENT, 1.5)
+    rows = [
+        (True, "Why Pi (measured on 1.5.0)",
+         "~2.3K-char prompt + 4 tool schemas ≈ 1.3K tokens of fixed overhead"),
+        (True, "Settings that matter",
+         "contextWindow = server ctx · modelOverrides: compaction ~6K/8K · thinking off"),
+        (False, "Alternatives",
+         "Aider (no tool calling needed) ✓ · Cline/Roo/OpenCode: prompts too long for 4B"),
+    ]
+    for i, (verdict, headline, detail) in enumerate(rows):
+        flag_row(slide, 4.5 + 0.64 * i, verdict, headline, detail)
+    quote(slide, "A small model needs a small agent — examples/local-models/ "
+                 "(+ verify/run.sh, no GPU needed).", y=6.42)
 
 
 def slide_06(prs):
@@ -502,7 +539,7 @@ def slide_08(prs):
         (True, "Containers / Docker Sandboxes",
          "Mount only the workspace; never mount host ~/.pi/agent"),
         (True, "Extensions as gates",
-         "permission-gate.ts, protected-paths.ts, sandbox/ examples; tool_call → block"),
+         "permission-gate.ts, protected-paths.ts; tool_call → block (no sandbox/ since 1.5)"),
         (True, "Static tool restriction",
          "--tools read,grep,find,ls · --exclude-tools · defaultTools · MCP hidden"),
         (False, "Project trust is NOT a sandbox",
@@ -775,7 +812,7 @@ def slide_18(prs):
         "tool_call → { block: true, reason } — also nested/MCP calls",
         "Handler throws → the tool is BLOCKED (fail-safe)",
     ], ACCENT, 2.2)
-    label(slide, 6.8, 2.01, 5.85, "block-external-git.ts  [TESTED on 1.3.0]")
+    label(slide, 6.8, 2.01, 5.85, "block-external-git.ts  [TESTED on 1.3.0 + 1.5.0]")
     code_block(slide, 6.8, 2.35, 5.85, 2.4, [
         'pi.on("tool_call", async (event) => {',
         '  if (event.toolName !== "bash") return;',
@@ -1253,7 +1290,7 @@ def slide_36(prs):
         ("2", "Safety by design",
          "No popups, no sandbox: containers + extensions + --tools enforce the policy."),
         ("3", "Context, caching, MCP, skills",
-         "Lean by default; caching automatic; MCP codemode → direct; /skill:name."),
+         "Lean by default (fits a 4 GB local model); caching automatic; MCP codemode → direct."),
         ("4", "Subagents + automation",
          "Extension or parallel pi; -p </dev/null, --approve, RPC, SDK."),
     ]
@@ -1282,7 +1319,7 @@ def slide_36(prs):
 
 
 SLIDES = [
-    slide_01, slide_02, slide_03, slide_04, slide_05, slide_06, slide_07, slide_08,
+    slide_01, slide_02, slide_03, slide_04, slide_05, slide_05b, slide_06, slide_07, slide_08,
     slide_09, slide_10, slide_11, slide_12, slide_13, slide_14, slide_15, slide_16,
     slide_17, slide_18, slide_19, slide_20, slide_21, slide_22, slide_23, slide_24,
     slide_25, slide_26, slide_27, slide_28, slide_29, slide_30, slide_31, slide_32,

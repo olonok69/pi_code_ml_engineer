@@ -30,11 +30,12 @@ export default function (pi: ExtensionAPI) {
 
 | File | Status | What it does |
 |---|---|---|
-| [`block-external-git.ts`](./block-external-git.ts) | **[TESTED] on Pi 1.3.0** | Blocks `git push`, `gh pr create/merge/…`, `gh release`, `gh repo create/delete/edit`, merges from `origin/`/`upstream/`. The methodology's "human owns external actions" gate. Live copy: [`../../.pi/extensions/`](../../.pi/extensions/) |
+| [`block-external-git.ts`](./block-external-git.ts) | **[TESTED] on Pi 1.3.0 and 1.5.0** | Blocks `git push`, `gh pr create/merge/…`, `gh release`, `gh repo create/delete/edit`, merges from `origin/`/`upstream/`. The methodology's "human owns external actions" gate. Live copy: [`../../.pi/extensions/`](../../.pi/extensions/) |
 | [`protect-env.untested.ts`](./protect-env.untested.ts) | UNTESTED pattern | Blocks shell commands that print/copy `.env`. Covers bash only: the `read` tool's input field names are **not in the findings** |
 | [`tool-call-logger.untested.ts`](./tool-call-logger.untested.ts) | UNTESTED pattern | Appends every tool call to `.pi-tool-calls.jsonl`; never blocks |
 
-**How `block-external-git.ts` was tested** (2026-10-17): a fake OpenAI-compatible server scripted two
+**How `block-external-git.ts` was tested** (2026-10-17 on 1.3.0; re-run 2026-11-06 on 1.5.0 with
+[`../local-models/verify/run.sh`](../local-models/verify/run.sh)): a fake OpenAI-compatible server scripted two
 bash tool calls — `git push origin main`, then `echo allowed-ok`. Run:
 `pi -p --no-session --model fake/fake-1 -e block-external-git.ts "push it" </dev/null`. With the
 extension the model received *"Blocked by policy: external git/PR action…"* and the echo still ran.

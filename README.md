@@ -1,5 +1,8 @@
 # Pi — A course in three parts (deck + guides)
 
+> 🇪🇸 **Versión en español:** [`README_ES.md`](./README_ES.md) · [`GUIA_PRESENTACION.md`](./GUIA_PRESENTACION.md) ·
+> [`GUIA_TECNICA.md`](./GUIA_TECNICA.md) · [`DEMO_RUNBOOK_ES.md`](./DEMO_RUNBOOK_ES.md). The deck is English only.
+
 > **The Pi volume of a course series.** Same course, same method, different tool:
 >
 > | Volume | Tool | Folder |
@@ -15,7 +18,8 @@ Material for a **course/workshop** on **Pi** — the minimal terminal coding age
 `@earendil-works/pi-coding-agent`, formerly `badlogic/pi-mono`). A single presentation (`.pptx`) with
 **three distinct parts**, two written guides, a demo runbook, and real, runnable examples. Aimed at
 **developers**. Every Pi claim was checked against **Pi 1.3.0 on 17 October 2026** and is traceable to
-[`docs/research/PI_FINDINGS_2026-10-17.md`](./docs/research/PI_FINDINGS_2026-10-17.md).
+[`docs/research/PI_FINDINGS_2026-10-17.md`](./docs/research/PI_FINDINGS_2026-10-17.md); the delta to **Pi 1.5.0**
+was re-checked on **6 November 2026** ([`docs/research/PI_UPDATE_2026-11-06.md`](./docs/research/PI_UPDATE_2026-11-06.md)).
 
 Why Pi is an interesting third volume: Claude Code and Cursor ship permission prompts, subagents and plan
 mode as product features. Pi deliberately **doesn't** ("What we didn't build": no permission popups, no
@@ -23,7 +27,7 @@ sub-agents, no plan mode) and hands you a TypeScript extension API instead. Port
 separates what was **discipline** from what was **product convenience**.
 
 - **Part 1 — Pi:** install, auth and modes (interactive, print `-p`, JSON, RPC, SDK) · providers and
-  models · memory (`AGENTS.md` walk-up, `AGENTS.override.md`, `CLAUDE.md` fallback, `SYSTEM.md` /
+  models · **local models on a 4 GB GPU** (llama.cpp router built in, Ollama / LM Studio, Qwen3.5-4B) · memory (`AGENTS.md` walk-up, `AGENTS.override.md`, `CLAUDE.md` fallback, `SYSTEM.md` /
   `APPEND_SYSTEM.md` — no nested-subdir loading, no scoped rules, no `@imports`) · permissions (none by
   design → trust, `--tools`, extensions, containers) · sessions (tree JSONL, `/tree` `/fork` `/clone`
   `/export` `/share`) · context window + compaction · prompt caching · **MCP (built in since 0.99)** ·
@@ -43,26 +47,28 @@ separates what was **discipline** from what was **product convenience**.
 
 | File | What it is |
 |---|---|
-| [`SPEAKER_GUIDE.md`](./SPEAKER_GUIDE.md) | Speaker guide: narrative per slide + closing one-liners 🗣️ + links to the code. |
-| [`TECHNICAL_GUIDE.md`](./TECHNICAL_GUIDE.md) | Copy-paste implementation reference (configs, commands, code), sections 1–16 + the **Claude Code → Cursor → Pi** equivalence table. |
-| [`DEMO_RUNBOOK.md`](./DEMO_RUNBOOK.md) | Live-demo cheatsheet: preflight, command per slide, timings, common failures. |
-| [`presentation/Pi_Presentation.pptx`](./presentation/) | The deck (16:9, 36 slides), same visual system as the sibling decks. |
+| [`SPEAKER_GUIDE.md`](./SPEAKER_GUIDE.md) · ES [`GUIA_PRESENTACION.md`](./GUIA_PRESENTACION.md) | Speaker guide: narrative per slide + closing one-liners 🗣️ + links to the code. |
+| [`TECHNICAL_GUIDE.md`](./TECHNICAL_GUIDE.md) · ES [`GUIA_TECNICA.md`](./GUIA_TECNICA.md) | Copy-paste implementation reference (configs, commands, code), sections 1–16 + the **Claude Code → Cursor → Pi** equivalence table. |
+| [`DEMO_RUNBOOK.md`](./DEMO_RUNBOOK.md) · ES [`DEMO_RUNBOOK_ES.md`](./DEMO_RUNBOOK_ES.md) | Live-demo cheatsheet: preflight, command per slide, timings, common failures. |
+| [`presentation/Pi_Presentation.pptx`](./presentation/) | The deck (16:9, 37 slides), same visual system as the sibling decks. |
 | [`presentation/build_pptx_pi.py`](./presentation/build_pptx_pi.py) | Generator for the deck (regenerable). |
 | [`AGENTS.md`](./AGENTS.md) + [`.pi/`](./.pi/) | This repo's own Pi surface: lean orientation, live skills, the git-gate extension, MCP. |
 | [`examples/`](./examples/) | Real artifacts adapted for Pi, grouped by course section. |
 | [`docs/`](./docs/) | **Reference**: the methodology pack (with the Pi adaptation), the knowledge graph, sync runbooks, and the research notes. |
 
-### Naming choices (English-only volume)
+### Naming choices (English first, Spanish copies)
 
-The Claude Code and Cursor volumes are bilingual: Spanish originals plus `_EN` copies. **This volume is
-English only**, so files use plain names and the Spanish names were translated rather than suffixed:
+The Claude Code and Cursor volumes are Spanish originals plus `_EN` copies. **This volume is written in English
+first**, so the English files use plain names; the four main documents also have **Spanish copies** (since
+2026-11-06). The deck and the `examples/` / `docs/` material are **English only** (exception:
+[`examples/local-models/README_ES.md`](./examples/local-models/README_ES.md)).
 
-| Sibling volumes | This volume |
+| Sibling volumes (ES / EN) | This volume (EN / ES) |
 |---|---|
-| `README_EN.md` | `README.md` |
-| `GUIA_TECNICA_EN.md` | `TECHNICAL_GUIDE.md` |
-| `GUIA_PRESENTACION_EN.md` | `SPEAKER_GUIDE.md` |
-| `DEMO_RUNBOOK_EN.md` | `DEMO_RUNBOOK.md` |
+| `README.md` / `README_EN.md` | `README.md` / `README_ES.md` |
+| `GUIA_TECNICA.md` / `GUIA_TECNICA_EN.md` | `TECHNICAL_GUIDE.md` / `GUIA_TECNICA.md` |
+| `GUIA_PRESENTACION.md` / `GUIA_PRESENTACION_EN.md` | `SPEAKER_GUIDE.md` / `GUIA_PRESENTACION.md` |
+| `DEMO_RUNBOOK.md` / `DEMO_RUNBOOK_EN.md` | `DEMO_RUNBOOK.md` / `DEMO_RUNBOOK_ES.md` |
 | `ejemplos/` (`metodologia_en/`) | `examples/` (`methodology/`) |
 | `presentacion/` | `presentation/` |
 | `Cursor_Presentacion_EN.pptx` | `Pi_Presentation.pptx` |
@@ -70,6 +76,7 @@ English only**, so files use plain names and the Spanish names were translated r
 ## Examples (by course section)
 
 **Part 1:**
+- [`examples/local-models/`](./examples/local-models/) — **local models on a 4 GB GPU**: llama.cpp router preset (Qwen3.5-4B), Ollama/LM Studio `models.json`, per-model compaction/thinking settings, agent and server comparison, and a no-GPU rehearsal script `verify/run.sh` (§01, slide 6).
 - [`examples/agents-md/`](./examples/agents-md/) — two-tier `AGENTS.md`, `AGENTS.override.md`, `APPEND_SYSTEM.md` (§02).
 - [`examples/permissions/`](./examples/permissions/) — no allowlist by design: trust, `--tools` / `defaultTools`, containers, `settings.json.example` (§02).
 - [`examples/context/`](./examples/context/) — compaction, `/compact`, `/tree`, lean levers (§03).
@@ -80,7 +87,6 @@ English only**, so files use plain names and the Spanish names were translated r
   **Demo targets:** [`ex_npm/`](./ex_npm/) (`/skill:audit`) · [`ex_app/`](./ex_app/) (`/skill:audit-python`) · [`ex_staging/`](./ex_staging/) (`/skill:deploy-staging`).
 - [`examples/subagents/`](./examples/subagents/) — read-only agent files for the subagent example extension + the extension-vs-parallel-processes diagram (§06).
 - [`examples/extensions/`](./examples/extensions/) — the hooks analogue: the **tested** `block-external-git.ts` + untested patterns (§07). **Live:** [`.pi/extensions/`](./.pi/extensions/).
-- [`examples/local-models/`](./examples/local-models/) — local models on a 4 GB GPU: llama.cpp router preset, Ollama/LM Studio, small-model settings, which agent and server fit (§01).
 - [`examples/automation/`](./examples/automation/) — print/JSON/RPC/SDK, and a GitHub Actions **pattern** (not an official action) (§07).
 
 **Part 2:**
@@ -108,6 +114,7 @@ uv run --with playwright python presentation/capture_kg_graph.py               #
 | Technology | Role in the course | Documentation |
 |---|---|---|
 | **Pi** | The tool (Part 1) | <https://pi.dev/docs/latest> · [source](https://github.com/earendil-works/pi/tree/main/packages/coding-agent) · [changelog](https://pi.dev/changelog) · [packages](https://pi.dev/packages) |
+| **llama.cpp / Ollama / LM Studio** | Local models (§01, slide 6) | [Pi llama.cpp guide](https://pi.dev/docs/latest/llama-cpp) · [llama.cpp](https://github.com/ggml-org/llama.cpp) · [Ollama](https://ollama.com) · [LM Studio](https://lmstudio.ai) |
 | **Agent Skills** | Skill format Pi implements (§05) | <https://agentskills.io> |
 | **MCP** | The connection standard (§04) | <https://modelcontextprotocol.io> |
 | **CodeGraph** | The code graph (§09) | <https://colbymchenry.github.io/codegraph/> · [repo](https://github.com/colbymchenry/codegraph) |
@@ -122,8 +129,9 @@ uv run --with playwright python presentation/capture_kg_graph.py               #
 Pi docs <https://pi.dev/docs/latest>, homepage <https://pi.dev>, changelog <https://pi.dev/changelog>,
 source <https://github.com/earendil-works/pi>, npm
 <https://www.npmjs.com/package/@earendil-works/pi-coding-agent>, Pi 1.0 announcement
-<https://earendil.com/posts/pi-1-0/> — **verified 2026-10-17, Pi 1.3.0. Pi moves fast (1.0 shipped
-2026-10-01, four releases since); re-check before reuse.** Markers used throughout: **[TESTED]** (run
+<https://earendil.com/posts/pi-1-0/> — **verified 2026-10-17, Pi 1.3.0; delta re-checked 2026-11-06, Pi 1.5.0
+([`docs/research/PI_UPDATE_2026-11-06.md`](./docs/research/PI_UPDATE_2026-11-06.md)). Pi moves fast (1.0 shipped
+2026-10-01, six releases since); re-check before reuse.** Markers used throughout: **[TESTED]** (run
 locally), **[3rd-party]** (community package, untested), **NOT DOCUMENTED**. Full notes:
 [`docs/research/PI_FINDINGS_2026-10-17.md`](./docs/research/PI_FINDINGS_2026-10-17.md).
 

@@ -1,6 +1,6 @@
 # Pi — Speaker guide (course in three parts)
 
-> Deck: [`presentation/Pi_Presentation.pptx`](./presentation/) (36 slides; regenerate with
+> Deck: [`presentation/Pi_Presentation.pptx`](./presentation/) (37 slides; regenerate with
 > [`presentation/build_pptx_pi.py`](./presentation/build_pptx_pi.py)).
 
 > Narrative guide for the course/workshop. It is written for the **speaker**: each section maps to a
@@ -26,6 +26,10 @@
 > **2026-10-17 against Pi 1.3.0** (docs at <https://pi.dev/docs/latest>, plus a local install). Items marked
 > **[TESTED]** were run by hand; **[3rd-party]** means a community package, untested; **NOT DOCUMENTED** means
 > no source exists. Pi moves fast — re-check before you give the course.
+>
+> **Update 2026-11-06 — Pi 1.5.0:** the delta from 1.3.0 (1.4.0 and 1.5.0) is in
+> [`docs/research/PI_UPDATE_2026-11-06.md`](./docs/research/PI_UPDATE_2026-11-06.md); the git gate and a local
+> `models.json` provider were re-run on 1.5.0. New in this revision: **slide 6, local models on a 4 GB GPU**.
 
 ---
 
@@ -34,25 +38,25 @@
 **Part 1 — Pi**
 
 0. [What Pi is (framing)](#0-what-pi-is) — slide 1
-1. [Install, auth, modes and models](#1-install-auth-modes-and-models) — slides 3–5
-2. [Memory, permissions and sessions](#2-memory-permissions-and-sessions) — slides 6–9
-3. [Context: window, compaction and prompt caching](#3-context) — slides 10–12
-4. [MCP — built in since 0.99](#4-mcp) — slide 13
-5. [Skills, prompt templates and packages](#5-skills-prompt-templates-and-packages) — slide 14
-6. [Subagents (not built in)](#6-subagents) — slides 15–17
-7. [Extensions and automation](#7-extensions-and-automation) — slides 18–19
+1. [Install, auth, modes and models](#1-install-auth-modes-and-models) — slides 3–6 (incl. local models)
+2. [Memory, permissions and sessions](#2-memory-permissions-and-sessions) — slides 7–10
+3. [Context: window, compaction and prompt caching](#3-context) — slides 11–13
+4. [MCP — built in since 0.99](#4-mcp) — slide 14
+5. [Skills, prompt templates and packages](#5-skills-prompt-templates-and-packages) — slide 15
+6. [Subagents (not built in)](#6-subagents) — slides 16–18
+7. [Extensions and automation](#7-extensions-and-automation) — slides 19–20
 
 **Part 2 — The methodology (agnostic)**
 
-8. [The methodology: principle, workflow, five-check gate](#8-the-methodology) — slides 20–23
-9. [The method's tools: CodeGraph, Serena, GSD…](#9-the-methods-tools) — slides 24–28
-10. [Transferring the methodology: from Claude Code to Pi](#10-transferring-the-methodology) — slide 29
-11. [Machine synchronization (tarball + S3)](#11-machine-synchronization) — slide 30
+8. [The methodology: principle, workflow, five-check gate](#8-the-methodology) — slides 21–24
+9. [The method's tools: CodeGraph, Serena, GSD…](#9-the-methods-tools) — slides 25–29
+10. [Transferring the methodology: from Claude Code to Pi](#10-transferring-the-methodology) — slide 30
+11. [Machine synchronization (tarball + S3)](#11-machine-synchronization) — slide 31
 
 **Part 3 — The ticket knowledge graph (graphify)**
 
-12. [The ticket knowledge graph](#12-the-ticket-knowledge-graph) — slides 31–35
-13. [Closing](#13-closing) — slide 36
+12. [The ticket knowledge graph](#12-the-ticket-knowledge-graph) — slides 32–36
+13. [Closing](#13-closing) — slide 37
 
 ---
 
@@ -65,7 +69,7 @@
 **Story:** Pi is a **minimal terminal coding agent** — "AI agent toolkit: unified LLM API, agent loop, TUI,
 coding agent CLI". It started as `badlogic/pi-mono` (Mario Zechner) and now lives at
 **`earendil-works/pi`**, maintained by Earendil Inc., MIT-licensed. Version 1.0 shipped on 2026-10-01; this
-course was checked against **1.3.0** (2026-10-15).
+course was researched on **1.3.0** (2026-10-15) and updated for **1.5.0** (2026-11-02).
 
 The framing that makes the whole of Part 1 click is the homepage's own section **"What we didn't build"**:
 no permission popups, no sub-agents, no plan mode — and, until recently, no MCP. Pi ships a small core (four
@@ -86,8 +90,9 @@ ticket graph and the close.
 
 ## 1. Install, auth, modes and models
 
-*Slides 3 (Part 1 divider), 4 (install & auth), 5 (modes, models, thinking).* Reference:
-[`TECHNICAL_GUIDE.md` §1](./TECHNICAL_GUIDE.md#1-installation-and-cli).
+*Slides 3 (Part 1 divider), 4 (install & auth), 5 (modes, models, thinking), 6 (local models on a 4 GB GPU).*
+Reference: [`TECHNICAL_GUIDE.md` §1](./TECHNICAL_GUIDE.md#1-installation-and-cli). Example:
+[`examples/local-models/`](./examples/local-models/).
 
 **Story (slide 4):** installing is one line; logging in is one command. Show both, then spend the time on the
 naming gotcha, because old tutorials will trip your audience.
@@ -95,7 +100,7 @@ naming gotcha, because old tutorials will trip your audience.
 ```bash
 curl -fsSL https://pi.dev/install.sh | sh                          # macOS/Linux; pins deps; later: pi update
 npm install -g --ignore-scripts @earendil-works/pi-coding-agent    # Node >= 22.19
-pi --version                                                        # [TESTED] -> 1.3.0
+pi --version                                                        # [TESTED] -> 1.5.0
 cd your-project && pi                                               # then /login and /model
 ```
 
@@ -103,7 +108,7 @@ cd your-project && pi                                               # then /logi
   For CI, use environment keys (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, …
   about 40 providers). Precedence: `--api-key` → `auth.json` → `models.json` → environment.
 - **Bedrock / Vertex / Azure / local:** ambient AWS credentials for Bedrock; llama.cpp via `/llama`; Ollama,
-  LM Studio, vLLM through `~/.pi/agent/models.json`.
+  LM Studio, vLLM through `~/.pi/agent/models.json` — slide 6 is the whole local story.
 - **Which subscriptions work with `/login`?** The docs publish **no list** — NOT DOCUMENTED. Say so.
 - **Naming gotcha:** `@mariozechner/pi-coding-agent` is deprecated in favour of
   `@earendil-works/pi-coding-agent`; the repo redirects. Extensions import types from the new scope. The
@@ -125,16 +130,43 @@ Sessions record model/thinking changes and restore them on resume.
 
 🗣️ *"One binary, five surfaces. Learn the TUI for yourself and `-p` for everything you'll automate."*
 
+### Slide 6 — Local models on a 4 GB GPU
+
+**Story:** "Can I run this on my own GPU?" is the first question every audience asks. With 4 GB of VRAM the honest
+answer is *yes, for scoped work* — and Pi is the agent that makes it work best.
+
+- **Two routes.** The **built-in llama.cpp provider**: start a llama.cpp *router* (no `-m`), `/login llama.cpp`,
+  then `/llama` loads, unloads and downloads GGUFs from Hugging Face inside Pi. Or **`models.json`** with
+  `api: "openai-completions"` for Ollama, LM Studio, vLLM or SGLang.
+- **What fits 4 GB:** **Qwen3.5-4B** at `IQ4_XS` (~2.7 GB) or `Q4_K_M` (~3.0 GB), no vision projector, 16–32 K
+  context, q8_0 KV cache. 7–9 B models need 8 GB for a usable context.
+- **Why Pi:** measured on 1.5.0, a request with `--tools read,bash,edit,write --no-mcp` carries ~2.3 K characters
+  of system prompt and four tool schemas (~2.8 K) — about **1.3 K tokens** of fixed overhead. Agents with long
+  prompts and dozens of tools (Cline, Roo, OpenCode) leave a 4 B model little room and confuse it. Aider is the
+  strong alternative: it needs no native tool calling.
+- **The three settings that matter:** `contextWindow` = the server's real context (otherwise compaction never
+  fires and the server truncates); per-model `compaction.modelOverrides` (~6 K reserve, ~8 K recent);
+  thinking `off` for quick edits (`modelThinkingLevels`).
+- **Server choice:** llama.cpp (control, native in Pi) › Ollama / LM Studio (easiest; raise Ollama's default
+  context) › vLLM (built for big GPUs — not for 4 GB).
+- **Set expectations:** a 4 B model reads, runs commands and makes small, well-specified edits. It does not plan
+  multi-file changes. Keep a cloud model one `Ctrl+P` away.
+
+Demo without a GPU: `bash examples/local-models/verify/run.sh` — a scripted OpenAI-compatible "model" asks for
+`git push`, the gate blocks it, and the script prints exactly what Pi sent.
+
+🗣️ *"A small model needs a small agent. Pi's prompt is about 1.3 K tokens — that's the whole trick."*
+
 ---
 
 ## 2. Memory, permissions and sessions
 
-*Slides 6 (AGENTS.md), 7 (SYSTEM.md + no auto-memory), 8 (permissions), 9 (sessions).* Reference:
+*Slides 7 (AGENTS.md), 8 (SYSTEM.md + no auto-memory), 9 (permissions), 10 (sessions).* Reference:
 [`TECHNICAL_GUIDE.md` §2](./TECHNICAL_GUIDE.md#2-memory), [§3](./TECHNICAL_GUIDE.md#3-permissions),
 [§4](./TECHNICAL_GUIDE.md#4-sessions). Examples: [`examples/agents-md/`](./examples/agents-md/),
 [`examples/permissions/`](./examples/permissions/).
 
-### Slide 6 — `AGENTS.md`: walk up, one file per directory
+### Slide 7 — `AGENTS.md`: walk up, one file per directory
 
 **Story:** the context-file rules are the single biggest difference from the other two volumes, and the one
 most likely to bite an experienced Claude Code or Cursor user.
@@ -153,7 +185,7 @@ most likely to bite an experienced Claude Code or Cursor user.
 point to `data/changes/**`, read on demand. What you lose is the per-subfolder file; what replaces scoped rules
 is a **skill whose description names the paths it applies to**, or an extension.
 
-### Slide 7 — `SYSTEM.md`, `APPEND_SYSTEM.md`, and no auto-memory
+### Slide 8 — `SYSTEM.md`, `APPEND_SYSTEM.md`, and no auto-memory
 
 - `SYSTEM.md` **replaces** Pi's default system prompt; `APPEND_SYSTEM.md` **appends** to it. Either in
   `~/.pi/agent/` or `.pi/`; the trusted project file wins, the two are not combined. CLI:
@@ -163,7 +195,7 @@ is a **skill whose description names the paths it applies to**, or an extension.
   ever: write-once ledgers (`STATUS.md`, `FOLLOWUPS.md`, `SHARP_EDGES.md`) — and Pi adds
   `PI_SESSION_FILE` for the raw trail.
 
-### Slide 8 — Permissions: none, by design
+### Slide 9 — Permissions: none, by design
 
 Quote the homepage: **"No permission popups — Run in a container, or build your own confirmation flow with
 extensions."** Pi reads, edits and executes with your account's permissions and does not ask.
@@ -177,11 +209,12 @@ extensions."** Pi reads, edits and executes with your account's permissions and 
 - **Static restriction by tool name:** `--tools read,grep,find,ls`, `--exclude-tools`, `defaultTools`, MCP
   `exposure: "hidden"`.
 - **Content gates = extensions:** shipped examples `permission-gate.ts` (blocks by default when there is no
-  UI), `protected-paths.ts`, `confirm-destructive.ts`, `sandbox/`. Section 7 builds one.
+  UI), `protected-paths.ts`, `confirm-destructive.ts` (the `sandbox/` example was removed in 1.5.0). Section 7
+  builds one.
 - **Honesty:** regex gates can be bypassed (`sh -c`, aliases, scripts) — the same caveat as the Cursor hook.
   For real guarantees, OS isolation.
 
-### Slide 9 — Sessions are a tree
+### Slide 10 — Sessions are a tree
 
 - Stored as JSONL **trees** (`id` / `parentId`, header v3) under
   `~/.pi/agent/sessions/--<cwd>--/<timestamp>_<id>.jsonl`.
@@ -197,12 +230,12 @@ extensions."** Pi reads, edits and executes with your account's permissions and 
 
 ## 3. Context
 
-*Slides 10 (window + compaction), 11 (prompt caching), 12 (lean levers).* Reference:
+*Slides 11 (window + compaction), 12 (prompt caching), 13 (lean levers).* Reference:
 [`TECHNICAL_GUIDE.md` §5](./TECHNICAL_GUIDE.md#5-context-window),
 [§6](./TECHNICAL_GUIDE.md#6-prompt-caching). Examples: [`examples/context/`](./examples/context/),
 [`examples/prompt-caching/`](./examples/prompt-caching/).
 
-### Slide 10 — Context window and compaction
+### Slide 11 — Context window and compaction
 
 **What fills it:** a deliberately small system prompt; the `AGENTS.md` chain (you control it); skills (only
 name + description + path until used); MCP (in the default codemode, just a one-line server summary); then the
@@ -211,11 +244,12 @@ conversation, which grows.
 **Compaction:** auto-compaction fires when `contextTokens > contextWindow - reserveTokens`, also between tool
 batches, with one compact-and-retry on overflow. `/compact [instructions]` does it by hand and the instructions
 steer the summary. Settings: `compaction.enabled` (true), `compaction.reserveTokens` (16384),
-`compaction.keepRecentTokens` (20000). The summary is structured — Goal / Constraints / Progress / Key
+`compaction.keepRecentTokens` (20000); since 1.4.0 `reserveTokens` only decides *when* compaction starts and the
+summary uses the model's output limit. The summary is structured — Goal / Constraints / Progress / Key
 Decisions / Next Steps / Critical Context — and **the original entries stay in the JSONL file**. Extensions can
 cancel or supply the summary (`session_before_compact`).
 
-### Slide 11 — Prompt caching: automatic, with knobs
+### Slide 12 — Prompt caching: automatic, with knobs
 
 The Anthropic API economics are the same as in the other volumes (write 1.25×, 2× for 1 h; read 0.1×), and the
 runnable demo [`examples/prompt-caching/cache_demo.py`](./examples/prompt-caching/cache_demo.py) shows the
@@ -231,7 +265,7 @@ providers. And unlike Cursor, it exposes knobs:
 - Design choices that protect the cache: mid-conversation prompt/tool changes are **appended** as deltas.
   What breaks it: **switching models**; and compaction requests don't write the cache.
 
-### Slide 12 — Pi's own levers
+### Slide 13 — Pi's own levers
 
 Four default tools; lazy skills; MCP codemode (scripts filter big output before the model sees it); MCP text
 over 20 KB middle-truncated with the full text saved to a temp file; `/tree` and `/fork` for side quests;
@@ -243,7 +277,7 @@ over 20 KB middle-truncated with the full text saved to a temp file; `/tree` and
 
 ## 4. MCP
 
-*Slide 13.* Reference: [`TECHNICAL_GUIDE.md` §7](./TECHNICAL_GUIDE.md#7-mcp). Example:
+*Slide 14.* Reference: [`TECHNICAL_GUIDE.md` §7](./TECHNICAL_GUIDE.md#7-mcp). Example:
 [`examples/mcp/`](./examples/mcp/).
 
 **Story:** open with the gotcha — much of the web still says "Pi has no MCP". That was Pi's stance until
@@ -265,6 +299,8 @@ over 20 KB middle-truncated with the full text saved to a temp file; `/tree` and
   `deferred`.
 - Every MCP call — including from codemode — passes through the `tool_call` extension handler, so the gates of
   section 7 apply.
+- *(1.5.0)* `pi mcp --help` now lists `add`/`remove`; OAuth servers default to automatic client registration
+  (`oauth.clientRegistration: "auto"`); MCP tool arguments get the same coercion as built-in tools.
 
 🗣️ *"Pi has MCP now. The trick is making the right tools visible: codemode by default, `direct` for the ones your method depends on."*
 
@@ -272,7 +308,7 @@ over 20 KB middle-truncated with the full text saved to a temp file; `/tree` and
 
 ## 5. Skills, prompt templates and packages
 
-*Slide 14.* Reference: [`TECHNICAL_GUIDE.md` §8](./TECHNICAL_GUIDE.md#8-skills-and-packages). Example:
+*Slide 15.* Reference: [`TECHNICAL_GUIDE.md` §8](./TECHNICAL_GUIDE.md#8-skills-and-packages). Example:
 [`examples/skills-plugins/`](./examples/skills-plugins/) (with `day`, `atlassian`, `evidence`, `preview`; tools in
 [`examples/methodology/tools/`](./examples/methodology/tools/)). Live in this repo: [`.pi/skills/`](./.pi/skills/)
 (`audit`, `audit-python`, `deploy-staging`) against [`ex_npm/`](./ex_npm/), [`ex_app/`](./ex_app/),
@@ -298,11 +334,11 @@ over 20 KB middle-truncated with the full text saved to a temp file; `/tree` and
 
 ## 6. Subagents
 
-*Slides 15 (not built in), 16 (read-only subagent), 17 (decision).* Reference:
+*Slides 16 (not built in), 17 (read-only subagent), 18 (decision).* Reference:
 [`TECHNICAL_GUIDE.md` §9](./TECHNICAL_GUIDE.md#9-subagents). Example:
 [`examples/subagents/`](./examples/subagents/).
 
-### Slide 15 — Not built in, on purpose
+### Slide 16 — Not built in, on purpose
 
 Homepage: **"No sub-agents — Spawn Pi instances via tmux, or build your own with extensions, or install a
 package."** Three options:
@@ -315,7 +351,7 @@ package."** Three options:
 2. **[3rd-party]** `pi-subagents` — untested.
 3. **tmux** or parallel `pi -p` / RPC processes.
 
-### Slide 16 — A read-only subagent, two ways
+### Slide 17 — A read-only subagent, two ways
 
 - **Agent file:** `tools: read, grep, find, ls` — no `bash`, `edit`, `write`. Note the shipped `scout`
   **does** include `bash`.
@@ -324,7 +360,7 @@ package."** Three options:
 - The `refactor-scout` procedure (CodeGraph → Serena → grep) from the other volumes is packaged as an agent
   file in [`examples/subagents/`](./examples/subagents/).
 
-### Slide 17 — The decision
+### Slide 18 — The decision
 
 | | Subagent extension | Parallel `pi` / RPC |
 |---|---|---|
@@ -342,12 +378,12 @@ processes; the human or the main session integrates.
 
 ## 7. Extensions and automation
 
-*Slides 18 (extensions as hooks), 19 (automation).* Reference:
+*Slides 19 (extensions as hooks), 20 (automation).* Reference:
 [`TECHNICAL_GUIDE.md` §10](./TECHNICAL_GUIDE.md#10-extensions-hooks),
 [§11](./TECHNICAL_GUIDE.md#11-automation). Examples: [`examples/extensions/`](./examples/extensions/),
 [`examples/automation/`](./examples/automation/). Live: [`.pi/extensions/`](./.pi/extensions/).
 
-### Slide 18 — Extensions are the hooks
+### Slide 19 — Extensions are the hooks
 
 Pi has no `hooks.json`. Hooks are **TypeScript extensions**: `export default function (pi: ExtensionAPI)`,
 loaded via `jiti` (no build step), hot-reloaded with `/reload`, from `~/.pi/agent/extensions/` or `.pi/extensions/`
@@ -356,13 +392,13 @@ loaded via `jiti` (no build step), hot-reloaded with `/reload`, from `~/.pi/agen
 and that includes nested calls, codemode scripts and MCP. A handler that throws **blocks the tool** (fail-safe).
 
 **The one we tested:** `block-external-git.ts` blocks `git push`, `gh pr create|merge|…`, `gh release`, and
-merges from `origin/` or `upstream/`. Tested on 1.3.0 with a fake OpenAI-compatible server scripting two bash
-calls: with the extension, the push was blocked and `echo allowed-ok` still ran; **in the control run without
+merges from `origin/` or `upstream/`. Tested on 1.3.0 and **re-tested on 1.5.0** with a fake OpenAI-compatible
+server scripting two bash calls: with the extension, the push was blocked and `echo allowed-ok` still ran; **in the control run without
 it, the push actually executed** — that's what proves the gate, not the environment. Install it **globally**
 (`~/.pi/agent/extensions/`): global extensions are not trust-gated and a repo can't remove them. Remember
 extensions run **in-process with full OS permissions** — read before you install.
 
-### Slide 19 — Automation and four gotchas
+### Slide 20 — Automation and four gotchas
 
 - **`</dev/null` [TESTED]:** when stdin is a non-TTY pipe that never closes (CI runners, agent harnesses),
   `pi -p` waits for EOF and looks hung.
@@ -384,7 +420,7 @@ extensions run **in-process with full OS permissions** — read before you insta
 
 ## 8. The methodology
 
-*Slides 20 (Part 2 divider), 21 (principle), 22 (11-stage flow), 23 (five-check gate).* Reference:
+*Slides 21 (Part 2 divider), 22 (principle), 23 (11-stage flow), 24 (five-check gate).* Reference:
 [`TECHNICAL_GUIDE.md` §12](./TECHNICAL_GUIDE.md#12-methodology). Material:
 [`examples/methodology/`](./examples/methodology/) (sanitised).
 
@@ -393,12 +429,12 @@ work with a coding agent on a project in production. It is the one we use, under
 it matters **more**: with no approval prompts and no plan mode, the method is the only thing standing between
 the agent and an unreviewed push.
 
-### Slide 21 — The principle
+### Slide 22 — The principle
 > **The agent is a disciplined collaborator, not an autopilot. Autonomy is earned per-decision, not granted
 > wholesale.** The agent owns research, plans, implementation, tests and documentation; the human owns go/no-go
 > decisions, scope, and **every external action** (push, PR, deploy).
 
-### Slide 22 — The 11-stage workflow
+### Slide 23 — The 11-stage workflow
 
 ![Workflow — 11 stages](./examples/methodology/flow.png)
 
@@ -410,7 +446,7 @@ the agent and an unreviewed push.
 5. **Plan** — Pi has **no plan mode**: the plan is a **file** under `data/changes/<ticket>/` that the human
    agrees (`/skill:methodology-plan` fills the template), or the `plan-mode/` example extension.
 6. **Implement** — TDD: RED (for the right reason) → GREEN, minimal change.
-7. **Verify** — unit + scoped + regression + the **five-check outbound gate** (slide 23).
+7. **Verify** — unit + scoped + regression + the **five-check outbound gate** (slide 24).
 8. **Document** — why + what + handover + acceptance criteria, each thing **once**.
 9. **Sanitize** — `/skill:sanitise-diff` scans the **added lines**.
 10. **Handoff** — the agent does **not** push/PR/deploy; `block-external-git.ts` guarantees it. The human does.
@@ -425,7 +461,7 @@ the agent and an unreviewed push.
 > cause with no model call → plan agreed → RED → structural fix → verified via the wrapper and inside the
 > deployed image → sanitise → the human pushes.
 
-### Slide 23 — The outbound gate is five checks
+### Slide 24 — The outbound gate is five checks
 
 **(0)** canary the measuring instrument on a known-answer case; **(1)** reproduce at the real output stage (the
 *wrapper*, not an internal `extract()`); **(2)** assert on the **member list**, never on a total; **(3)** verify
@@ -443,13 +479,13 @@ couldn't fail** (a detector firing on 0 of 190 corpus documents reads the same w
 
 ## 9. The method's tools
 
-*Slides 24 (prevalence), 25 (CodeGraph), 26 (Serena), 27 (GSD), 28 (oracles, Playwright, Context7, kg).*
+*Slides 25 (prevalence), 26 (CodeGraph), 27 (Serena), 28 (GSD), 29 (oracles, Playwright, Context7, kg).*
 Reference: [`TECHNICAL_GUIDE.md` §13](./TECHNICAL_GUIDE.md#13-the-methods-tools). Detail:
 [`examples/methodology/tools.md`](./examples/methodology/tools.md),
 [`examples/codegraph/`](./examples/codegraph/), [`examples/serena/`](./examples/serena/),
 [`examples/gsd/`](./examples/gsd/).
 
-### Slide 24 — The precedence: cheap → expensive, deterministic → probabilistic
+### Slide 25 — The precedence: cheap → expensive, deterministic → probabilistic
 
 Pi has no scoped rules, so the rule lives in `AGENTS.md`: *"`codegraph_explore` first (treat the source it
 returns as already read); Serena `find_referencing_symbols` before rename/delete; grep/read only for
@@ -466,7 +502,7 @@ literals."* And it only works if those tools are **visible** — `toolExposure: 
 | Deployed (7) | Docker — repro inside the runtime image |
 | Only at the end (7) | The agent's call — to verify, not to diagnose |
 
-### Slide 25 — CodeGraph in Pi: make it direct
+### Slide 26 — CodeGraph in Pi: make it direct
 
 Tree-sitter → SQLite index (`.codegraph/`), local, no API keys; one query returns source + call paths + blast
 radius + test-coverage flags. **[TESTED]:** `pi mcp add codegraph -- codegraph serve --path <repo> --mcp`,
@@ -475,14 +511,14 @@ is exactly the point: **codemode** is the default, so add `toolExposure: { "code
 No `${workspaceFolder}`-style variable is documented: use an absolute `--path` in `.pi/mcp.json`, or `cwd`.
 [3rd-party] `@henryqw/pi-codegraph` / `@vndv/pi-codegraph` expose it natively (untested).
 
-### Slide 26 — Serena
+### Slide 27 — Serena
 
 Semantic navigation via LSP: `find_symbol`, `get_symbols_overview`, `search_for_pattern`, and above all
 `find_referencing_symbols` — disambiguates `Invoice.process` from `Refund.process`, which CodeGraph's flat
 impact can't. **The `uvx … serena start-mcp-server` args are copied from the Cursor guide and were not tested
 under Pi** — say so. [3rd-party] `@bacnh85/pi-serena` exists, untested.
 
-### Slide 27 — GSD: Claude Code only
+### Slide 28 — GSD: Claude Code only
 
 GSD (discuss → plan → execute → verify, `gsd-*` subagents, `.planning/`) officially supports Claude Code,
 OpenCode, Gemini and Codex — **not Pi**. [3rd-party] `pi-gsd` is an unofficial port, untested. Don't load
@@ -491,7 +527,7 @@ files in `data/changes/`, prompt templates (`/plan-phase` → a template), and t
 chain. **Honesty:** the real project doesn't run GSD either — the 11-stage workflow + `data/changes/` fits
 per-ticket fixes on a production service.
 
-### Slide 28 — Oracles, Playwright, Context7, kg
+### Slide 29 — Oracles, Playwright, Context7, kg
 
 Home-grown oracles (`_diag_*.py`) are loose code the agent runs with bash — the cheap, reproducible answer.
 Playwright reproduces the symptom where the consumer sees it; Context7 gives live library docs. Both as
@@ -512,7 +548,7 @@ Playwright reproduces the symptom where the consumer sees it; Context7 gives liv
 
 ## 10. Transferring the methodology
 
-*Slide 29.* Reference: [`TECHNICAL_GUIDE.md` §14](./TECHNICAL_GUIDE.md#14-transferring-the-methodology). Kit:
+*Slide 30.* Reference: [`TECHNICAL_GUIDE.md` §14](./TECHNICAL_GUIDE.md#14-transferring-the-methodology). Kit:
 [`docs/ai-agents-code-methodology/PI_ADAPTATION.md`](./docs/ai-agents-code-methodology/PI_ADAPTATION.md) +
 ready-to-copy surface [`docs/ai-agents-code-methodology/pi/`](./docs/ai-agents-code-methodology/pi/).
 
@@ -551,7 +587,7 @@ extension and adapt that step, or keep that one step in Claude Code.
 
 ## 11. Machine synchronization
 
-*Slide 30.* Reference: [`TECHNICAL_GUIDE.md` §15](./TECHNICAL_GUIDE.md#15-machine-sync). Material:
+*Slide 31.* Reference: [`TECHNICAL_GUIDE.md` §15](./TECHNICAL_GUIDE.md#15-machine-sync). Material:
 [`examples/methodology/machine-sync.md`](./examples/methodology/machine-sync.md),
 [`docs/synchro/`](./docs/synchro/), scripts in [`examples/methodology/s3-sync/`](./examples/methodology/s3-sync/).
 
@@ -581,7 +617,7 @@ auto-mount a late USB; verify the copy byte by byte.
 
 ## 12. The ticket knowledge graph
 
-*Slides 31 (divider), 32 (12a), 33 (12b), 34 (12c), 35 (12d).* Reference:
+*Slides 32 (divider), 33 (12a), 34 (12b), 35 (12c), 36 (12d).* Reference:
 [`TECHNICAL_GUIDE.md` §16](./TECHNICAL_GUIDE.md#16-ticket-knowledge-graph). Material:
 [`docs/knowledge-graph/`](./docs/knowledge-graph/), summary [`docs/KNOWLEDGE_GRAPH.md`](./docs/KNOWLEDGE_GRAPH.md).
 
@@ -590,13 +626,13 @@ the **project's memory** — writeups, sharp edges, runbooks, memory notes — a
 here?"* in one call, **with no LLM**. Built with **graphify** (CodeGraph is only the analogy). The copy in this
 repo is **pseudonymised**: ticket keys and client names were replaced consistently, so the structure is intact.
 
-### 12a. The problem and the design (slide 32 — [`design.md`](./docs/knowledge-graph/design.md))
+### 12a. The problem and the design (slide 33 — [`design.md`](./docs/knowledge-graph/design.md))
 ~540 writeup files; a "new" bug almost always has prior context that constrains the fix. A **diffable**
 [`manifest.txt`](./docs/knowledge-graph/manifest.txt) (~116 files, ~196k words), hard exclusions (binaries,
 repeated handovers, stale travel copies). Phase 1 was a spike with a keep/extend/replace decision — graphify was
 enough.
 
-### 12b. The pipeline and the skills in Pi (slide 33)
+### 12b. The pipeline and the skills in Pi (slide 34)
 ```
 kg_refresh.sh prepare   # manifest -> stage _corpus/ -> scratch OUTSIDE the repo
 (semantic extraction)   # the only agent step — dispatches parallel SUBAGENTS
@@ -608,14 +644,14 @@ kg_refresh.sh finalize  # artifacts to output/ + leak-check
   **UNVERIFIED**. Honest split: Pi for queries and bookends; the semantic step in Claude Code, or adapted to the
   subagent extension.
 
-### 12c. The real output (slide 34 — [`GRAPH_REPORT.md`](./docs/knowledge-graph/output/GRAPH_REPORT.md))
+### 12c. The real output (slide 35 — [`GRAPH_REPORT.md`](./docs/knowledge-graph/output/GRAPH_REPORT.md))
 **507 nodes · 672 edges · 35 communities**; 92% `EXTRACTED`, 7% `INFERRED` (mean confidence 0.7). Communities
 map to real danger zones ("Letter-End & Run-in Titles", "Title Detection Failures", "PDF Extractor Cascade"…);
 god-nodes are a free onboarding list; "surprising connections" surface twin lessons nobody linked by hand. The
 screenshot is [`presentation/kg_graph.png`](./presentation/kg_graph.png), re-captured from the pseudonymised
 `graph.html`.
 
-### 12d. Usage and hook-in (slide 35)
+### 12d. Usage and hook-in (slide 36)
 ```bash
 kg_query.sh explain <ticket|topic>   # neighbours  <- most common
 kg_query.sh path <A> <B>             # shortest path
@@ -635,9 +671,10 @@ corpus is; hand-authored files inside the tree (the curated community names) alw
 
 ## 13. Closing
 
-*Slide 36.*
+*Slide 37.*
 
-**Part 1 — the tool:** Pi installs in one line and ships almost nothing — on purpose. `AGENTS.md` walks up,
+**Part 1 — the tool:** Pi installs in one line and ships almost nothing — on purpose — which is also why it is
+the best agent for a small local model (llama.cpp built in, ~1.3 K tokens of fixed prompt). `AGENTS.md` walks up,
 `SYSTEM.md` is yours, there's no auto-memory and **no permission popups**: containers, extensions and `--tools`
 enforce the policy. Caching is automatic with real knobs; MCP is built in (codemode → `direct` for the tools you
 depend on); skills are the same `SKILL.md` invoked as `/skill:name`; subagents come from an extension or from
@@ -657,5 +694,5 @@ the same skill.
 
 **References:** <https://pi.dev/docs/latest> · <https://github.com/earendil-works/pi> ·
 <https://pi.dev/packages> · CodeGraph <https://github.com/colbymchenry/codegraph> · Serena
-<https://github.com/oraios/serena> · graphify <https://graphify.net>. Verified 2026-10-17, Pi 1.3.0 — Pi moves
-fast, re-check before reuse.
+<https://github.com/oraios/serena> · graphify <https://graphify.net>. Verified 2026-10-17, Pi 1.3.0; delta
+re-checked 2026-11-06, Pi 1.5.0 — Pi moves fast, re-check before reuse.

@@ -3,15 +3,19 @@
 How to point Pi at a model running on your own machine, sized for a **4 GB** card, and how Pi compares
 with the other agents and servers people usually reach for.
 
-> **Status: UNTESTED end to end.** The Pi side (`/login llama.cpp`, `/llama`, `models.json`) follows the
-> Pi docs ([llama-cpp], [models], [models-configuration], checked 2026-11-06). The model choice, file names
-> and VRAM figures come from the model card ([qwen35-4b-gguf]) and have **not** been run on a 4 GB card.
-> Expect to tune `ctx-size` once on your hardware.
+> **Status.** **[TESTED on Pi 1.5.0, 2026-11-06]:** the Pi side of the plumbing — a `models.json` provider
+> (`api: "openai-completions"`) against a scripted OpenAI-compatible server, `--model ollama/<id>`,
+> `--tools`, `--no-mcp`, the [`settings.json.example`](./settings.json.example) overrides, real tool calls
+> round-tripping, and the git gate blocking `git push`. **UNTESTED:** a real model on a real 4 GB card (no GPU
+> or model download in the test box). The model choice, file names and VRAM figures come from the model card
+> ([qwen35-4b-gguf]); expect to tune `ctx-size` once on your hardware.
 
 ## TL;DR
 
 - **Agent: keep Pi.** It is the best fit of the common agents for a small local model: a short system prompt,
-  a handful of tools, and a **built-in llama.cpp provider** (`/login llama.cpp`, `/llama`). Agents with very
+  a handful of tools, and a **built-in llama.cpp provider** (`/login llama.cpp`, `/llama`). **Measured on
+  1.5.0:** with `--tools read,bash,edit,write --no-mcp -nc`, the system prompt is ~2.3 K characters and the four
+  tool schemas ~2.8 K — about **1.3 K tokens** of fixed overhead per request. Agents with very
   long system prompts and many tools leave a 4B model little room and confuse it.
 - **Server: llama.cpp router.** It is what Pi integrates natively, and it gives the control a 4 GB card needs
   (quantised KV cache, exact context size, no vision projector). Ollama or LM Studio are the easy fallback.
@@ -27,7 +31,8 @@ with the other agents and servers people usually reach for.
 |---|---|---|
 | [`qwen3.5-4b.ini`](./qwen3.5-4b.ini) | next to `llama-server` (any path) | llama.cpp router preset sized for 4 GB |
 | [`models.json.example`](./models.json.example) | `~/.pi/agent/models.json` | Ollama and LM Studio providers (not needed for llama.cpp) |
-| [`settings.json.example`](./settings.json.example) | merge into `~/.pi/agent/settings.json` | Compaction thresholds that fit a 32K window; thinking off by default |
+| [`verify/`](./verify/) | run in place | `run.sh` + `fake-openai.mjs`: rehearse Pi against a scripted OpenAI-compatible "local model" (no GPU, no download) |
+| [`settings.json.example`](./settings.json.example) | merge into `~/.pi/agent/settings.json` | Per-model compaction thresholds that fit a 32K window and thinking `off` — only for the local models (`compaction.modelOverrides`, `modelThinkingLevels`); cloud models keep the defaults |
 
 ## Route A — llama.cpp router (recommended)
 
@@ -48,7 +53,7 @@ with the other agents and servers people usually reach for.
 
    ```bash
    export LLAMA_BASE_URL=http://127.0.0.1:9931
-   pi
+   pi --tools read,bash,edit,write --no-mcp
    ```
 
 4. **Select the model:** `/model` → `qwen3.5-4b`. Without the preset you can also use `/llama` →
@@ -73,15 +78,28 @@ keep the provider you use, and make the model `id` match what the server reports
 - **LM Studio:** download the same GGUF in the app, set the context length when loading it, enable the
   local server (default port 1234).
 
+## Rehearse without a GPU (for the demo or CI)
+
+```bash
+bash examples/local-models/verify/run.sh      # needs node + pi on PATH
+```
+
+It starts [`verify/fake-openai.mjs`](./verify/fake-openai.mjs) (a scripted OpenAI-compatible server that plays a
+model asking for `git push origin main`, then `echo allowed-ok`), points an **isolated** agent dir at it through
+`models.json`, loads this repo's git gate, and prints what Pi actually sent. Expected (**[TESTED] on 1.5.0**):
+the push comes back `Blocked by policy…`, the echo runs, and every request carries 4 tool schemas,
+`max_tokens=8192` from `models.json`, and a ~2.3 K-character system prompt. Swap the `baseUrl` for
+`http://127.0.0.1:9931/v1` or `http://localhost:11434/v1` and the same command talks to a real local server.
+
 ## Make Pi lighter for a small model
 
 | Lever | Why |
 |---|---|
 | `contextWindow` in `models.json` = the server's real context | Pi's default is 128000; if Pi thinks the window is bigger than the server's, compaction never triggers and the server truncates instead |
-| `compaction.reserveTokens` ~6K, `keepRecentTokens` ~8K ([`settings.json.example`](./settings.json.example)) | The defaults (16384 / 20000) are sized for 200K-token models and would eat most of a 32K window |
+| `compaction.modelOverrides` → `reserveTokens` ~6K, `keepRecentTokens` ~8K for the local model ([`settings.json.example`](./settings.json.example)) | The defaults (16384 / 20000) are sized for 200K-token models and would eat most of a 32K window. Keys are exact `provider/modelId`, so cloud models keep the defaults. Since 1.4.0 the summary request itself uses the model's output limit (`maxTokens`) |
 | `--tools read,bash,edit,write` | Fewer tool schemas in the prompt, fewer wrong tool picks |
-| No MCP servers in the session | Each server adds tools/instructions to the prompt; this repo's own `.pi/mcp.json` loads two |
-| Thinking `off` (`/thinking`, `Shift+Tab`) for quick edits | Qwen3.5 thinks by default; at ~20–40 tok/s long thoughts dominate latency. Turn it on for harder steps |
+| `--no-mcp` | Disables MCP for the run; each server adds tools/instructions to the prompt and this repo's own `.pi/mcp.json` loads two |
+| Thinking `off` (`modelThinkingLevels` per model, or `/thinking`, `Shift+Tab`) for quick edits | Qwen3.5 thinks by default; at ~20–40 tok/s long thoughts dominate latency. Turn it on for harder steps |
 | Short, scoped prompts with explicit file paths | Small models navigate poorly; point them at the file |
 
 ## Which server?
@@ -126,4 +144,6 @@ Sizes are GGUF file sizes; add the KV cache (grows with context) and ~0.3–0.5 
 - [qwen35-4b-gguf] Qwen3.5-4B GGUF quants — <https://huggingface.co/bartowski/Qwen_Qwen3.5-4B-GGUF>
 - [kilo-local] "The best local coding models for any setup" (2026-07-29) — <https://blog.kilo.ai/p/the-best-local-coding-models-for>
 
-All checked 2026-11-06. Agent comparisons (Aider, OpenCode, Cline, Continue) are design-level, not benchmarked here.
+- [compaction] Pi docs, Compaction (`modelOverrides`; summaries use the output limit since 1.4.0) — <https://pi.dev/docs/latest/compaction>
+
+All checked 2026-11-06 against Pi 1.5.0. Agent comparisons (Aider, OpenCode, Cline, Continue) are design-level, not benchmarked here.

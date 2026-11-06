@@ -13,13 +13,19 @@
 > `main`, and a local install. The research notes are in
 > [`docs/research/PI_FINDINGS_2026-10-17.md`](./docs/research/PI_FINDINGS_2026-10-17.md). Markers used
 > below: **[TESTED]** = run locally · **[3rd-party]** = community package, untested · **NOT DOCUMENTED** =
-> no source. **Pi moves fast** (1.0 shipped 2026-10-01; four releases since) — re-check before reuse.
+> no source. **Pi moves fast** (1.0 shipped 2026-10-01; six releases since) — re-check before reuse.
+>
+> **Update 2026-11-06 — Pi 1.5.0.** The guide was re-checked against **1.4.0 (2026-10-21)** and **1.5.0
+> (2026-11-02)**: changelog, the docs shipped in the 1.5.0 package, and a local 1.5.0 install (git gate, local
+> `models.json` provider, `</dev/null` gotcha re-run). What changed and what was re-tested:
+> [`docs/research/PI_UPDATE_2026-11-06.md`](./docs/research/PI_UPDATE_2026-11-06.md). Changes are flagged
+> inline as *(1.4.0)* / *(1.5.0)*.
 
 ## Table of contents
 
 **Part 1 — Pi**
 
-1. [Installation, auth, modes and models](#1-installation-and-cli)
+1. [Installation, auth, modes and models](#1-installation-and-cli) — incl. [local models on a 4 GB GPU](#local-models-llamacpp-ollama-lm-studio--and-a-4-gb-gpu)
 2. [Memory: AGENTS.md, SYSTEM.md and (no) auto-memory](#2-memory)
 3. [Permissions: none by design](#3-permissions)
 4. [Sessions: a tree in a JSONL file](#4-sessions)
@@ -70,11 +76,15 @@ curl -fsSL https://pi.dev/install.sh | sh                          # macOS/Linux
 powershell -c "irm https://pi.dev/install.ps1 | iex"               # Windows
 npm install -g --ignore-scripts @earendil-works/pi-coding-agent    # Node >= 22.19; does NOT pin transitive deps
 nix profile add github:earendil-works/pi/stable                     # Nix
-pi --version                                                        # [TESTED] -> 1.3.0
+pi --version                                                        # [TESTED] -> 1.5.0 (researched on 1.3.0)
 
 pi update              # Pi itself      · pi update --extensions   # packages
 pi update --models     # model catalogue · pi update --all          # both
 ```
+
+*(1.5.0)* Wrappers or other package managers can take over self-update with `PI_SELF_UPDATE_COMMAND` / the
+`selfUpdateCommand` setting; after an update, the next fresh launch shows installed extensions' changelogs
+(`collapseChangelog` condenses them).
 
 Uninstall with `npm uninstall -g @earendil-works/pi-coding-agent` or by re-running the installer; neither
 removes `~/.pi/agent/` (your settings, sessions and credentials).
@@ -100,15 +110,34 @@ cd my-project && pi
 - **Subscriptions:** the docs say "a supported subscription → `/login`" but publish **no list** —
   **NOT DOCUMENTED**. Mentioned: "Sign in with ChatGPT" for `openai`; a `warnings.anthropicExtraUsage`
   setting; and the containerisation page passing a token from `claude setup-token` as `ANTHROPIC_OAUTH_TOKEN`.
-- **Local models:** built-in llama.cpp router (`/llama`); Ollama, LM Studio, vLLM, SGLang via
-  `~/.pi/agent/models.json`:
+- **Local models:** see the next subsection.
+
+### Local models (llama.cpp, Ollama, LM Studio) — and a 4 GB GPU
+
+Two routes, both documented:
+
+| Route | How | When |
+|---|---|---|
+| **Built-in llama.cpp provider** | Start a llama.cpp **router** (`llama serve` without `-m`/`-hf`, default `http://127.0.0.1:9931`), then `/login llama.cpp` (or `LLAMA_BASE_URL`), `/llama` to load/unload/download GGUFs from Hugging Face, `/model` to select | Best control; Pi's native path |
+| **`models.json`** (OpenAI-compatible) | `~/.pi/agent/models.json` provider with `baseUrl`, `api: "openai-completions"`, a dummy `apiKey`, and `models[]` (`id`, `contextWindow`, `maxTokens`, `reasoning`) — `/model` reloads the file | Ollama, LM Studio, vLLM, SGLang, any proxy |
 
 ```json
-{"providers":{"ollama":{"baseUrl":"http://localhost:11434/v1","api":"openai-completions","apiKey":"ollama","models":[{"id":"qwen2.5-coder:7b"}]}}}
+{"providers":{"ollama":{"baseUrl":"http://localhost:11434/v1","api":"openai-completions","apiKey":"ollama",
+  "models":[{"id":"qwen3.5:4b","contextWindow":32768,"maxTokens":8192,"reasoning":true}]}}}
 ```
 
-Small-GPU walkthrough (4 GB VRAM: preset, `models.json`, compaction settings, agent and server
-comparison): [`examples/local-models/`](./examples/local-models/).
+**Set `contextWindow` to the server's real context.** Pi's default is 128000; if Pi believes the window is larger
+than the server's, auto-compaction never fires and the server truncates instead (Ollama does it silently).
+
+**Small GPU (4 GB VRAM) — the course's recommendation:** Pi + the llama.cpp router + **Qwen3.5-4B** (`IQ4_XS`
+~2.7 GB or `Q4_K_M` ~3.0 GB, `no-mmproj`, 16–32 K context, q8_0 KV cache). 7–9 B models don't fit 4 GB with a
+usable context. Shrink Pi for the small model: `--tools read,bash,edit,write --no-mcp`, and per-model
+`compaction.modelOverrides` (`reserveTokens` ~6 K, `keepRecentTokens` ~8 K) plus `modelThinkingLevels: "off"` so
+cloud models keep their defaults. **[TESTED] on 1.5.0** (scripted server): with those flags each request carries
+4 tool schemas (~2.8 K chars) and a ~2.3 K-char system prompt — about **1.3 K tokens** of fixed overhead, which is
+why Pi suits a small model better than agents with long prompts (Cline, Roo, OpenCode). Aider is the strongest
+alternative (no native tool calling needed). Everything — preset, `models.json`, settings, comparison tables,
+and a no-GPU rehearsal script — is in [`examples/local-models/`](./examples/local-models/).
 
 ### Models and thinking
 
@@ -224,7 +253,7 @@ flow with extensions."** Its security policy lists "lack of a built-in sandbox" 
 |---|---|---|---|
 | 1 | **Project trust** | Whether a folder's *resources* load (`.pi/settings.json`, `.pi/mcp.json`, `.pi/extensions\|skills\|prompts\|themes`, `.pi/SYSTEM.md`, `.agents/skills`) | `/trust`, saved in `~/.pi/agent/trust.json`; `defaultProjectTrust: "ask" \| "always" \| "never"` (user settings only; default `"ask"`). **Does not sandbox tool calls**; context files load regardless. |
 | 2 | **Static tool restriction** (by tool *name*) | Which tools exist | `--tools read,grep,find,ls` (allowlist) · `--exclude-tools` · `-nbt` / `-nt` · `defaultTools` with `+name` / `-name` · MCP `exposure: "hidden"` / `toolExposure` |
-| 3 | **Content gates** | What a call may do | Extensions: `pi.on("tool_call") → { block: true, reason }` (§10). Shipped examples: `permission-gate.ts` (confirms `rm -rf`, `sudo`, `chmod 777`; **blocks by default with no UI**), `protected-paths.ts`, `confirm-destructive.ts`, `dirty-repo-guard.ts`, `plan-mode/`, `sandbox/` (OS sandbox via `@anthropic-ai/sandbox-runtime`) |
+| 3 | **Content gates** | What a call may do | Extensions: `pi.on("tool_call") → { block: true, reason }` (§10). Shipped examples: `permission-gate.ts` (confirms `rm -rf`, `sudo`, `chmod 777`; **blocks by default with no UI**), `protected-paths.ts`, `confirm-destructive.ts`, `dirty-repo-guard.ts`, `plan-mode/`. *(1.5.0)* The native OS `sandbox/` example was **removed** — use layer 4 |
 | 4 | **Isolation** | Blast radius of everything | Plain Docker (mount only the workspace, **never** host `~/.pi/agent`) · Docker Sandboxes (`sbx run --kit "docker.io/sbx/pi-kit:latest" pi`; the real key stays on the host) · NVIDIA OpenShell · Gondolin micro-VM extension (built-in tools + `!` in a VM; the Pi process and other extension tools stay on the host) |
 | 5 | **The method** | What the agent is asked to do | AGENTS.md gates; the human owns external actions |
 
@@ -289,7 +318,11 @@ Shell tools receive `PI_SESSION_ID`, `PI_SESSION_FILE`, `PI_PROVIDER`, `PI_MODEL
 }
 ```
 
-(`compaction.modelOverrides` sets per-`provider/modelId` values.)
+(`compaction.modelOverrides` sets per-`provider/modelId` values — e.g. smaller budgets for a 32 K local model.)
+
+*(1.4.0)* `reserveTokens` now **only decides when compaction starts**; the summary request itself uses the
+model's output limit (`maxTokens`), reduced when needed so input and output fit the window. So a local model's
+`maxTokens` in `models.json` matters.
 
 **How it works:** older messages are summarised into a `CompactionEntry` (`summary`, `firstKeptEntryId`,
 `tokensBefore`, `details.readFiles/modifiedFiles`); the original entries **stay in the file**. The summary is
@@ -372,7 +405,11 @@ pi mcp login <name>    # OAuth;  pi mcp logout | remove
 /mcp                   # in the TUI
 ```
 
-(The `--help` synopsis lists only `list|login|logout`; `add` and `remove` exist — **[TESTED]**.)
+(On 1.3.0 the `--help` synopsis listed only `list|login|logout`; *(1.5.0)* it now lists `add` and `remove` too
+**[TESTED]**.) *(1.5.0)* OAuth servers default to `oauth.clientRegistration: "auto"` (Client ID Metadata
+Document when supported, dynamic registration otherwise; `"dcr"` always registers); `pi mcp add
+--oauth-client-registration` sets it. MCP tool arguments now get the same coercion as built-in tools (numeric
+strings → numbers, a single value → array).
 
 ### Exposure modes — the decision that matters
 
@@ -556,7 +593,7 @@ Pi's hooks are not a JSON file of shell commands — they are **TypeScript exten
 
 Nested calls (`ctx.executeTool`, codemode scripts, MCP) also pass through `tool_call`.
 
-### The methodology's gate — [TESTED] on 1.3.0
+### The methodology's gate — [TESTED] on 1.3.0 and 1.5.0
 
 [`examples/extensions/block-external-git.ts`](./examples/extensions/block-external-git.ts) (also live in
 [`.pi/extensions/`](./.pi/extensions/)):
@@ -590,6 +627,8 @@ then `echo allowed-ok`); `pi -p --no-session --model fake/fake-1 -e block-extern
 With the extension the model received "Blocked by policy…" and the echo still ran. **Control run without
 it:** the push actually executed (and failed on an empty scratch repo) — proving the gate, not the
 environment, stopped it. That control run is the "canary the instrument" rule from Part 2, applied.
+**Re-run on 1.5.0 (2026-11-06)** with the same result — reproducible with
+[`examples/local-models/verify/run.sh`](./examples/local-models/verify/run.sh).
 
 Install it **globally** (`~/.pi/agent/extensions/`): global extensions are not trust-gated, so a repo
 cannot switch the gate off. Leave `user_bash` alone — the human owns pushes, including `!git push`.
@@ -614,6 +653,11 @@ Other API surface: `pi.registerTool({ name, label, description, parameters: Type
 `appendEntry`, `setActiveTools`, `registerProvider`, `registerMcpServer`, `registerVirtualModel`,
 `registerToolRenderer`, `pi.events`; UI via `ctx.ui.confirm`, `select`, `input`, `notify`, `setStatus`,
 `setWidget`, `custom`. More patterns: [`examples/extensions/`](./examples/extensions/).
+
+*(1.5.0, breaking)* Tool arguments are validated by `@earendil-works/pi-schema`: TypeBox features outside JSON
+Schema (`Type.Refine()`, `Type.BigInt()`, `Type.Undefined()`, codecs, `Format.Set()`) no longer apply to tool
+arguments, and validation errors reach the model in pi-schema's format. `pi.exec()` gains `maxBuffer` and a
+`truncated` result field.
 
 ---
 
@@ -1079,12 +1123,13 @@ the real gain is **recall in dense zones**; `EXTRACTED` = reliable, `INFERRED` =
 
 ## A. Equivalence table: Claude Code → Cursor → Pi
 
-| Concept | Claude Code | Cursor | Pi (1.3.0) |
+| Concept | Claude Code | Cursor | Pi (1.5.0) |
 |---|---|---|---|
 | Install | `npm i -g @anthropic-ai/claude-code` / installer | Editor download + `curl https://cursor.com/install \| bash` | `curl -fsSL https://pi.dev/install.sh \| sh` or `npm i -g --ignore-scripts @earendil-works/pi-coding-agent` |
 | Binary | `claude` | `agent` (CLI) | `pi` |
 | Auth | `/login`, `ANTHROPIC_API_KEY` | `agent login`, `CURSOR_API_KEY` | `/login` (OAuth or key → `~/.pi/agent/auth.json`) or provider env vars; ~40 providers |
 | Model / effort | `/model`, effort setting | Model picker | `/model`, `Ctrl+L`, `Ctrl+P`, `--model p/id:high`, `/thinking` (off…max) |
+| Local models | Via a gateway / `ANTHROPIC_BASE_URL` | Custom OpenAI base URL | Built-in llama.cpp provider (`/llama`) + `models.json` (Ollama, LM Studio, vLLM, SGLang) — [`examples/local-models/`](./examples/local-models/) |
 | Headless | `claude -p` | `agent -p --trust [--force]` | `pi -p` (`</dev/null` in CI), `--mode json`, `--mode rpc` |
 | Global instructions | `~/.claude/CLAUDE.md` | User rules | `~/.pi/agent/AGENTS.md` (or CLAUDE.md) |
 | Project instructions | `CLAUDE.md` (+ nested, `@imports`) | `AGENTS.md` (nested, most specific wins) + `.cursor/rules/*.mdc` | `AGENTS.md` / `CLAUDE.md` in cwd **and ancestors only**; one per directory (AGENTS.md wins); no `@imports`, no globs |
@@ -1092,7 +1137,7 @@ the real gain is **recall in dense zones**; `EXTRACTED` = reliable, `INFERRED` =
 | Scoped rules | `.claude/rules/` (paths) | `.mdc` `globs` | None; skill, extension, or `claude-rules.ts` example |
 | Auto-memory | `MEMORY.md` auto-memory | Memories (auto) | None built in; extensions or [3rd-party] packages |
 | Permissions | `settings.json` allow/deny + prompts | `permissions.json` `mcpAllowlist` / `terminalAllowlist` + approvals | **No prompts, no allowlist file.** `--tools` / `--exclude-tools` / `defaultTools`, MCP `toolExposure: hidden`, project trust, extensions, containers |
-| Sandbox | Optional sandbox mode | — | None built in; Docker, Docker Sandboxes, OpenShell, Gondolin extension, `sandbox/` example |
+| Sandbox | Optional sandbox mode | — | None built in; Docker, Docker Sandboxes, OpenShell, Gondolin extension (`sandbox/` example removed in 1.5.0) |
 | Sessions storage | `~/.claude/projects/…jsonl` | Chat history | `~/.pi/agent/sessions/--<cwd>--/<ts>_<id>.jsonl` (tree, v3) |
 | Resume | `claude -c` / `-r` | Chat list | `pi -c`, `pi -r`, `/resume`, `--session` |
 | Branch / rewind | `/rewind`, Esc-Esc | `/rewind` (CLI) | `/tree`, `/fork`, `/clone`, Esc-Esc |
@@ -1119,7 +1164,7 @@ the real gain is **recall in dense zones**; `EXTRACTED` = reliable, `INFERRED` =
 1. Package renamed: `@earendil-works/pi-coding-agent` (old `@mariozechner/…` deprecated); extensions import types from the new scope.
 2. MCP **is** built in (since 0.99.0) — default exposure `codemode` hides tools; set `toolExposure: direct` for the trigger-map tools.
 3. `--tools`: plain names replace the defaults; a list of only `+x`/`-x` adjusts them; don't mix (1.1.0). It keeps MCP tools unless an entry starts with `mcp__` (1.0.4).
-4. `pi mcp --help` synopsis omits `add`/`remove` — they exist.
+4. `pi mcp --help` synopsis omitted `add`/`remove` up to 1.3.0 (they existed); fixed in 1.5.0.
 5. Context files: one per directory (AGENTS.md shadows CLAUDE.md); ancestors only; they ignore project trust.
 6. `pi -p` waits for stdin EOF on a non-TTY pipe → `</dev/null`.
 7. Print/JSON/RPC can't show the trust prompt → project `.pi/` resources skipped silently unless `--approve`.
@@ -1130,15 +1175,19 @@ the real gain is **recall in dense zones**; `EXTRACTED` = reliable, `INFERRED` =
 12. Windows: `powershell` is a built-in tool (`defaultTools: ["-bash", "+powershell"]`); WSL2 behaves like Linux **[TESTED]**.
 13. Telemetry: `enableInstallTelemetry` defaults to `true` — `PI_TELEMETRY=0` or the setting.
 14. New issues/PRs from new contributors to the Pi repo are closed automatically.
+15. Local models: set `contextWindow` (and `maxTokens`) in `models.json` to the server's real values — the 128 K default means compaction never fires and the server truncates (§1).
+16. *(1.4.0)* `compaction.reserveTokens` only sets *when* compaction starts; the summary uses the model's output limit.
+17. *(1.5.0)* The `sandbox/` extension example is gone; tool-argument validation moved to `pi-schema` (TypeBox-only features no longer apply).
 
 ## C. Sources
 
-Verified **2026-10-17, Pi 1.3.0 — Pi moves fast, re-check before reuse.**
+Verified **2026-10-17, Pi 1.3.0**; delta re-checked **2026-11-06, Pi 1.5.0** — Pi moves fast, re-check before reuse.
 
 - Pi docs: <https://pi.dev/docs/latest> (pages cited by name above: quickstart, cli, cli-integration,
   configuration, security, containerization, sessions, session-format, compaction, settings,
   models, models-configuration, providers, mcp, codemode, skills, prompt-templates, packages, extensions,
-  json, rpc, rpc-commands, rpc-extension-ui, sdk, environment-variables, windows, tmux)
+  json, rpc, rpc-commands, rpc-extension-ui, sdk, environment-variables, windows, tmux, llama-cpp,
+  nvidia-rtx-llama-cpp)
 - Pi homepage ("What we didn't build"): <https://pi.dev> · changelog <https://pi.dev/changelog> ·
   packages gallery <https://pi.dev/packages> · models <https://pi.dev/models>
 - Source and examples: <https://github.com/earendil-works/pi/tree/main/packages/coding-agent>
@@ -1146,4 +1195,5 @@ Verified **2026-10-17, Pi 1.3.0 — Pi moves fast, re-check before reuse.**
 - npm: <https://www.npmjs.com/package/@earendil-works/pi-coding-agent>
 - Pi 1.0 announcement: <https://earendil.com/posts/pi-1-0/>
 - Agent Skills spec: <https://agentskills.io>
-- Research notes for this course: [`docs/research/PI_FINDINGS_2026-10-17.md`](./docs/research/PI_FINDINGS_2026-10-17.md)
+- Research notes for this course: [`docs/research/PI_FINDINGS_2026-10-17.md`](./docs/research/PI_FINDINGS_2026-10-17.md) ·
+  update [`docs/research/PI_UPDATE_2026-11-06.md`](./docs/research/PI_UPDATE_2026-11-06.md)

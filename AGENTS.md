@@ -28,7 +28,8 @@ Canonical teaching copies live under `examples/*` (keep them in sync if you edit
 ## Rules for any agent working here
 
 - Human owns every external action: no push, PR, merge, release or deploy unless explicitly asked.
-- Pi claims must trace to `docs/research/PI_FINDINGS_2026-10-17.md`; if it says NOT DOCUMENTED, say so.
+- Pi claims must trace to `docs/research/PI_FINDINGS_2026-10-17.md` (1.3.0) or `docs/research/PI_UPDATE_2026-11-06.md`
+  (1.5.0 delta); if it says NOT DOCUMENTED, say so.
 - Sanitised content only: no client names, ticket IDs, account IDs, emails or secrets.
 
 ## Pointers

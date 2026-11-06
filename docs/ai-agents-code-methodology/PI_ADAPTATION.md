@@ -7,7 +7,8 @@
 > Companion pack (copy-ready AGENTS.md, MCP, extension, settings, skills): [`pi/`](pi/).
 > Sibling guides: [`CURSOR_ADAPTATION.md`](CURSOR_ADAPTATION.md), [`COPILOT_ADAPTATION.md`](COPILOT_ADAPTATION.md).
 >
-> **Verified 2026-10-17 against Pi 1.3.0.** Every Pi fact here comes from
+> **Verified 2026-10-17 against Pi 1.3.0; delta to 1.5.0 re-checked 2026-11-06
+> ([`../research/PI_UPDATE_2026-11-06.md`](../research/PI_UPDATE_2026-11-06.md)).** Every Pi fact here comes from
 > [`../research/PI_FINDINGS_2026-10-17.md`](../research/PI_FINDINGS_2026-10-17.md); markers:
 > **[TESTED]** (run locally), **[3rd-party]** (community package, untested), **NOT DOCUMENTED**.
 > Pi moves fast — re-check before reuse.
@@ -56,7 +57,7 @@ If you keep only five rules, keep **1–5**. Add **6–7** as soon as you share 
 | Skills (`kg`, `day`, …) | `~/.claude/skills/` → `/kg` | `~/.pi/agent/skills/`, `.pi/skills/`, `~/.agents/skills/`, `.agents/skills/`, or the `"skills"` setting → **`/skill:kg`** |
 | Slash commands | `.claude/commands/*.md` | Prompt templates `~/.pi/agent/prompts/*.md` / `.pi/prompts/*.md` → `/<name>` |
 | Hard gates (block push, …) | Hooks (`exit 2`) + `settings.local.json` allowlist | **Extension**: `pi.on("tool_call", …)` → `{ block: true, reason }` — [`pi/extensions/block-external-git.ts`](pi/extensions/block-external-git.ts) **[TESTED]** |
-| Permission prompts / allowlist | Built in | **None by design.** Containers (Docker, Docker Sandboxes, OpenShell, Gondolin), `--tools` / `defaultTools`, MCP `exposure: hidden`, project trust, extensions (`permission-gate.ts`, `sandbox/` examples) |
+| Permission prompts / allowlist | Built in | **None by design.** Containers (Docker, Docker Sandboxes, OpenShell, Gondolin), `--tools` / `defaultTools`, MCP `exposure: hidden`, project trust, extensions (`permission-gate.ts`, `protected-paths.ts` examples; the `sandbox/` example was removed in 1.5.0) |
 | Plan gate | Plan mode | **None built in.** The plan is a file the human agrees to; optional `plan-mode/` example extension or `--tools read,grep,find,ls` |
 | Parallel / isolated exploration | Subagents / Agent Teams | **None built in.** `examples/extensions/subagent/` (agent files in `~/.pi/agent/agents/`), [3rd-party] `pi-subagents`, tmux, or `pi -p --tools read,grep,find,ls --no-session` child processes. No Agent Teams. |
 | Persistent memory | auto-memory + claude-mem | **None built in.** Write-once ledgers + `pi -c` / `/resume` + greppable session JSONL. [3rd-party] `pi-memory` & co. |

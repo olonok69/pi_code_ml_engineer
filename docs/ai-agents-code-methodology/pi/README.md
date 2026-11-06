@@ -14,7 +14,7 @@ Parent guide: [`../PI_ADAPTATION.md`](../PI_ADAPTATION.md). Every Pi fact used h
 | `APPEND_SYSTEM.md.example` | `~/.pi/agent/APPEND_SYSTEM.md` (or `.pi/APPEND_SYSTEM.md`) | Optional always-on gates appended to Pi's system prompt. The trusted project file wins over the global one; they are **not** combined. Plain text — it is appended verbatim. |
 | `mcp.json.example` | `.pi/mcp.json` (trusted projects only) or `~/.pi/agent/mcp.json` | CodeGraph + Serena with `toolExposure: direct` for the tools the method wants used unprompted; Playwright + Context7 `deferred`. |
 | `settings.json.example` | `~/.pi/agent/settings.json` | Only documented keys. `defaultProjectTrust` and `cacheWarming` are **agent-directory only** — drop them if you use this as `.pi/settings.json`. |
-| `extensions/block-external-git.ts` | `~/.pi/agent/extensions/` | **[TESTED on 1.3.0]** `tool_call` gate: blocks `git push`, `gh pr create/merge/…`, `gh release`, merges from `origin/`. |
+| `extensions/block-external-git.ts` | `~/.pi/agent/extensions/` | **[TESTED on 1.3.0 and 1.5.0]** `tool_call` gate: blocks `git push`, `gh pr create/merge/…`, `gh release`, merges from `origin/`. |
 | `skills/*/SKILL.md` | `~/.pi/agent/skills/` or `.pi/skills/` | `kg`, `kg-refresh`, `methodology-plan`, `sanitise-diff`, `day`, `atlassian`, `evidence`, `preview`. Invoke with `/skill:<name>`. |
 
 ## Install (from the target repo root, bash)

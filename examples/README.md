@@ -1,7 +1,8 @@
 # Examples for the Pi volume
 
 Same structure as the `ejemplos/` folders of the sibling volumes (Claude Code, Cursor), rewritten for
-**Pi** (1.3.0, verified 2026-10-17). The methodology and the tool roles (CodeGraph, Serena,
+**Pi** (1.3.0, verified 2026-10-17; delta to 1.5.0 re-checked 2026-11-06 —
+[`../docs/research/PI_UPDATE_2026-11-06.md`](../docs/research/PI_UPDATE_2026-11-06.md)). The methodology and the tool roles (CodeGraph, Serena,
 Playwright, graphify) stay; the product *surface* changes (context files, skills, MCP exposure,
 extensions, modes). Every Pi claim traces to
 [`../docs/research/PI_FINDINGS_2026-10-17.md`](../docs/research/PI_FINDINGS_2026-10-17.md).

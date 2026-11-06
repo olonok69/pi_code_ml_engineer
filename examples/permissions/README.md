@@ -51,8 +51,8 @@ combined. `defaultProjectTrust` and `cacheWarming` are honoured only in the user
 ## Shipped example extensions for confirmation flows (Pi repo, untested here)
 
 `permission-gate.ts` (confirm `rm -rf`, `sudo`, `chmod 777`; **blocks by default when there is no UI**),
-`protected-paths.ts`, `confirm-destructive.ts`, `dirty-repo-guard.ts`, `plan-mode/`, `sandbox/` (OS
-sandbox via `@anthropic-ai/sandbox-runtime`). The docs also show an MCP-annotation-based approval gate.
+`protected-paths.ts`, `confirm-destructive.ts`, `dirty-repo-guard.ts`, `plan-mode/` (the `sandbox/` OS-sandbox
+example shipped up to 1.4.0 and was removed in 1.5.0). The docs also show an MCP-annotation-based approval gate.
 
 [3rd-party], untested: `@gotgenes/pi-permission-system`, `pi-permission-modes` (bubblewrap/sandbox-exec,
 allow/ask/deny, bash AST gating), `@czottmann/pi-automode`, `@erichll/pi-auto-review`.

@@ -1,11 +1,20 @@
 {
   "$schema": "https://pi.dev/schemas/settings.schema.json",
 
-  "defaultThinkingLevel": "off",
-
   "compaction": {
     "enabled": true,
-    "reserveTokens": 6144,
-    "keepRecentTokens": 8000
+    "reserveTokens": 16384,
+    "keepRecentTokens": 20000,
+    "modelOverrides": {
+      "llama.cpp/qwen3.5-4b": { "reserveTokens": 6144, "keepRecentTokens": 8000 },
+      "ollama/qwen3.5:4b":    { "reserveTokens": 6144, "keepRecentTokens": 8000 },
+      "lmstudio/qwen3.5-4b":  { "reserveTokens": 6144, "keepRecentTokens": 8000 }
+    }
+  },
+
+  "modelThinkingLevels": {
+    "llama.cpp/qwen3.5-4b": "off",
+    "ollama/qwen3.5:4b": "off",
+    "lmstudio/qwen3.5-4b": "off"
   }
 }

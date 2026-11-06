@@ -1,3 +1,5 @@
+> **Update:** the delta to Pi 1.4.0 / 1.5.0 is in [`PI_UPDATE_2026-11-06.md`](./PI_UPDATE_2026-11-06.md).
+
 # Pi: research findings for "Pi — a course in three parts"
 
 > Repo copy of the research notes behind this course. Local scratch paths and project-specific names were

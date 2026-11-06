@@ -64,7 +64,7 @@ the factories explicitly (comment in `sdk.ts`).
 ## 6. CI — [`github-action-pi.yml`](./github-action-pi.yml)
 
 **A pattern, not an official action, and not run in CI.** Read-only agent job (pinned
-`@earendil-works/pi-coding-agent@1.3.0`, `--tools read,grep,find,ls`, `--approve`, `</dev/null`) that
+`@earendil-works/pi-coding-agent@1.5.0`, `--tools read,grep,find,ls`, `--approve`, `</dev/null`) that
 uploads `review.md` as an artifact; a second job behind a GitHub environment with required reviewers
 posts it. The human owns the external action — same policy as the methodology.
 

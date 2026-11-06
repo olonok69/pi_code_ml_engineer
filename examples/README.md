@@ -20,6 +20,7 @@ Full adaptation guide: [`../docs/ai-agents-code-methodology/PI_ADAPTATION.md`](.
 | [`skills-plugins/`](./skills-plugins/) | 05 | Slash commands + skills + plugins | Agent Skills (`/skill:name`), prompt templates, `pi install` packages; `day`, `atlassian`, `evidence`, `audit*`, `deploy-staging` |
 | [`subagents/`](./subagents/) | 06 | Task + Agent Teams | **Not built in** — subagent example extension, parallel `pi` processes, [3rd-party] packages |
 | [`extensions/`](./extensions/) | 07 | Hooks (`exit 2`) | TypeScript extensions: `pi.on("tool_call") → { block: true, reason }` — the [TESTED] git gate |
+| [`local-models/`](./local-models/) | 01 | Model choice (cloud) | Local models on a 4 GB GPU: llama.cpp router preset, Ollama/LM Studio `models.json`, small-model settings, agent/server comparison |
 | [`automation/`](./automation/) | 07 | `claude -p` + Agent SDK | `pi -p` (`</dev/null`, `--approve`), `--mode json`, `--mode rpc`, SDK, CI pattern |
 | [`methodology/`](./methodology/) | 08, 11 | 11-stage flow | Same flow + Pi surface; `tools/` (read-only Jira/Confluence + evidence core, with tests); `s3-sync/` scripts |
 | [`codegraph/`](./codegraph/) · [`serena/`](./serena/) | 09 | MCP in Claude | Same servers via Pi MCP (`direct` exposure) |

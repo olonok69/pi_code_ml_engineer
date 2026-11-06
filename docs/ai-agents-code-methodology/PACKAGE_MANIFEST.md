@@ -40,7 +40,7 @@ This file lists all artifacts included in the portable methodology package.
 5. `pi/mcp.json.example`
 6. `pi/settings.json.example`
 7. `pi/extensions/block-external-git.ts`
-8. `pi/skills/{kg,kg-refresh,methodology-plan,sanitise-diff,day,atlassian,evidence}/SKILL.md`
+8. `pi/skills/{kg,kg-refresh,methodology-plan,sanitise-diff,day,atlassian,evidence,preview}/SKILL.md`
 
 ## Cursor surface pack (`cursor/`)
 

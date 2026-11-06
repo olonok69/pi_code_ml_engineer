@@ -1,4 +1,4 @@
-# `tools/` — two read-mostly tools for the agent
+# `tools/` — two read-mostly tools for the agent (and two that stay in the project)
 
 Genericised copies of two real project tools. Both share one idea: **the agent can read far more than
 it can write**, and that boundary is enforced in code, not in an instruction. That matters even more in
@@ -94,3 +94,15 @@ fail with `SOURCE_GRACE = 0`. Canary against a known answer, and on more than on
 
 Exit codes: 0 ok · 1 usage · 2 login (`aws sso login`, do not diagnose) · 3 AWS error · 4 nothing found ·
 5 guard (narrow `--since`) · 6 the bucket no longer guarantees old versions.
+
+## 3. Not shipped here: `preview/` and `ticket_status/`
+
+Two more project tools are referenced by skills but are **not** copied into the course, because both are
+bound to one product rather than to the method:
+
+| Tool | Skill | Why it is not here | What to take from it |
+|---|---|---|---|
+| `preview/` (`preview.sh`) | [`preview`](../../skills-plugins/.pi/skills/preview/SKILL.md) | Drives the **consumer app's real preview page** and the **deployed service image** (Docker, a consumer clone, real LLM calls). A generic copy would be a re-implementation of a product UI, which is exactly what the tool refuses to be. | The pattern: *before* = what the environment ran (from `evidence`), *after* = the code under test **in the deployed image**, both rendered by the **real** consumer page, plus an item-by-item `compare.txt`. Run folders live **outside** `data/`. |
+| `ticket_status/` (`sync.py`) | [`day`](../../skills-plugins/.pi/skills/day/SKILL.md) step 3b (optional) | Maps one tracker's workflow states and one Git host's PR data into one team's status workbook. | Publisher writes, contributors only read (a binary workbook with two writers is last-writer-wins); a **canary** check before any write. |
+
+Both live beside `evidence/` in the project's shared record (`data/changes/tools/`), not in git.

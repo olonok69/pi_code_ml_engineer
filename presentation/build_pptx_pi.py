@@ -1085,7 +1085,7 @@ def slide_29(prs):
     card(slide, 0.7, 4.95, 11.95, 1.25,
          "The starter kit: PI_ADAPTATION.md (docs/ai-agents-code-methodology/)", [
              "Mapping + pi/ (AGENTS.md, mcp.json, settings.json, block-external-git.ts, "
-             "skills day/atlassian/evidence/kg/kg-refresh…) ready to copy",
+             "skills day/atlassian/evidence/preview/kg…) ready to copy",
              "kg-refresh caveat: its extraction step needs subagents → extension, or keep "
              "that one step in Claude Code",
          ], ACCENT, 0.35)

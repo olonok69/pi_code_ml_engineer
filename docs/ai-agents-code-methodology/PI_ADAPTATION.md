@@ -206,6 +206,7 @@ Then:
 | `day` | **Unchanged** | `/skill:day start` (not `/day`). Optional prompt template `~/.pi/agent/prompts/day.md` ("Run the day skill: $@") keeps `/day` muscle memory — an inference, not documented. |
 | `atlassian` | **Unchanged** | bash + `atl.py`; GET-only enforced by the tool. |
 | `evidence` | **Unchanged** | Read-only rests on the IAM role + skill text (no allowlist in Pi). |
+| `preview` | **Unchanged** | Local shell + Docker; `/skill:preview --doc <id>`. Nothing gates a second concurrent run or the LLM spend in Pi: one document at a time, always `--stop`. |
 | `methodology-plan` | **Unchanged** | The plan gate becomes "plan file + human agreement". |
 | `sanitise-diff` | **Unchanged** | `git diff --cached` + scan. |
 
@@ -245,7 +246,7 @@ save it under `data/changes/<id>/`, stop for agreement.
   AGENTS.md                  # global orientation (Pi's ~/.claude/CLAUDE.md)
   settings.json
   extensions/block-external-git.ts
-  skills/{kg,kg-refresh,methodology-plan,sanitise-diff,day,atlassian,evidence}/SKILL.md
+  skills/{kg,kg-refresh,methodology-plan,sanitise-diff,day,atlassian,evidence,preview}/SKILL.md
   auth.json  mcp-auth.json  trust.json   # machine-local secrets/state — never synced
 .pi/
   mcp.json                   # project MCP (trusted projects only)

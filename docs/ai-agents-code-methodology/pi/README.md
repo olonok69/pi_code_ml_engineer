@@ -15,7 +15,7 @@ Parent guide: [`../PI_ADAPTATION.md`](../PI_ADAPTATION.md). Every Pi fact used h
 | `mcp.json.example` | `.pi/mcp.json` (trusted projects only) or `~/.pi/agent/mcp.json` | CodeGraph + Serena with `toolExposure: direct` for the tools the method wants used unprompted; Playwright + Context7 `deferred`. |
 | `settings.json.example` | `~/.pi/agent/settings.json` | Only documented keys. `defaultProjectTrust` and `cacheWarming` are **agent-directory only** — drop them if you use this as `.pi/settings.json`. |
 | `extensions/block-external-git.ts` | `~/.pi/agent/extensions/` | **[TESTED on 1.3.0]** `tool_call` gate: blocks `git push`, `gh pr create/merge/…`, `gh release`, merges from `origin/`. |
-| `skills/*/SKILL.md` | `~/.pi/agent/skills/` or `.pi/skills/` | `kg`, `kg-refresh`, `methodology-plan`, `sanitise-diff`, `day`, `atlassian`, `evidence`. Invoke with `/skill:<name>`. |
+| `skills/*/SKILL.md` | `~/.pi/agent/skills/` or `.pi/skills/` | `kg`, `kg-refresh`, `methodology-plan`, `sanitise-diff`, `day`, `atlassian`, `evidence`, `preview`. Invoke with `/skill:<name>`. |
 
 ## Install (from the target repo root, bash)
 

@@ -4,8 +4,8 @@
 > [`SPEAKER_GUIDE.md`](./SPEAKER_GUIDE.md) (the narrative thread) with the **how**.
 > All runnable artifacts are in [`examples/`](./examples/); [`docs/`](./docs/) is reference material from a
 > real installation. Sibling volumes, same structure and section numbering:
-> [Claude Code](../claude_code_ml_engineer/GUIA_TECNICA_EN.md) ·
-> [Cursor](../cursor_code_ml_engineer/GUIA_TECNICA_EN.md) (sibling folders; links assume the volumes
+> [Claude Code](https://github.com/olonok69/claude_code_ml_engineer/blob/master/GUIA_TECNICA_EN.md) ·
+> [Cursor](https://github.com/olonok69/cursor_code_ml_engineer/blob/main/GUIA_TECNICA_EN.md) (sibling folders; links assume the volumes
 > sit side by side).
 >
 > **Verification note:** every Pi claim was checked on **17 October 2026** against **Pi 1.3.0**
@@ -447,7 +447,7 @@ pi --skill ./examples/skills-plugins/.pi/skills/day "start the day"
 
 Live in this repo: [`.pi/skills/`](./.pi/skills/) (`audit`, `audit-python`, `deploy-staging`), against the
 demo targets [`ex_npm/`](./ex_npm/), [`ex_app/`](./ex_app/), [`ex_staging/`](./ex_staging/). The methodology's
-real skills (`day`, `atlassian`, `evidence`) are in
+real skills (`day`, `atlassian`, `evidence`, `preview`) are in
 [`examples/skills-plugins/`](./examples/skills-plugins/), their tools in
 [`examples/methodology/tools/`](./examples/methodology/tools/).
 
@@ -828,7 +828,7 @@ Real material: [`docs/ai-agents-code-methodology/`](./docs/ai-agents-code-method
 - **Pi:** [`PI_ADAPTATION.md`](./docs/ai-agents-code-methodology/PI_ADAPTATION.md) + surface
   [`pi/`](./docs/ai-agents-code-methodology/pi/) (`AGENTS.md.example`, `APPEND_SYSTEM.md.example`,
   `mcp.json.example`, `settings.json.example`, `extensions/block-external-git.ts`, `skills/day/`,
-  `skills/atlassian/`, `skills/evidence/`, `skills/kg/`, `skills/kg-refresh/`, `skills/methodology-plan/`,
+  `skills/atlassian/`, `skills/evidence/`, `skills/preview/`, `skills/kg/`, `skills/kg-refresh/`, `skills/methodology-plan/`,
   `skills/sanitise-diff/`).
 - Shared: [`TRANSFER_AND_BOOTSTRAP.md`](./docs/ai-agents-code-methodology/TRANSFER_AND_BOOTSTRAP.md),
   [`templates/`](./docs/ai-agents-code-methodology/templates/).

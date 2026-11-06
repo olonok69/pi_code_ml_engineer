@@ -4,8 +4,8 @@
 >
 > | Volume | Tool | Folder |
 > |---|---|---|
-> | 1 | Claude Code | [`../claude_code_ml_engineer`](../claude_code_ml_engineer/README_EN.md) |
-> | 2 | Cursor | [`../cursor_code_ml_engineer`](../cursor_code_ml_engineer/README_EN.md) |
+> | 1 | Claude Code | [`../claude_code_ml_engineer`](https://github.com/olonok69/claude_code_ml_engineer/blob/master/README_EN.md) |
+> | 2 | Cursor | [`../cursor_code_ml_engineer`](https://github.com/olonok69/cursor_code_ml_engineer/blob/main/README_EN.md) |
 > | 3 | **Pi** | this repo |
 > | 4 (upcoming) | GitHub Copilot | `copilot_code_ml_engineer` (not published yet) |
 >
@@ -75,7 +75,7 @@ English only**, so files use plain names and the Spanish names were translated r
 - [`examples/context/`](./examples/context/) — compaction, `/compact`, `/tree`, lean levers (§03).
 - [`examples/prompt-caching/`](./examples/prompt-caching/) — the caching mechanism (Anthropic API demo) + what Pi controls (§03).
 - [`examples/mcp/`](./examples/mcp/) — `mcp.json` with `exposure` / `toolExposure` (§04).
-- [`examples/skills-plugins/`](./examples/skills-plugins/) — skills under `.pi/skills/` incl. the real project's `day`, `atlassian` (read-only Jira/Confluence) and `evidence` (read-only run evidence); their tools are in [`examples/methodology/tools/`](./examples/methodology/tools/) (§05).
+- [`examples/skills-plugins/`](./examples/skills-plugins/) — skills under `.pi/skills/` incl. the real project's `day`, `atlassian` (read-only Jira/Confluence) `evidence` (read-only run evidence) and `preview` (local before/after in the real preview page); their tools are in [`examples/methodology/tools/`](./examples/methodology/tools/) (§05).
   **Live in this repo:** [`.pi/skills/`](./.pi/skills/) (`audit`, `audit-python`, `deploy-staging`).
   **Demo targets:** [`ex_npm/`](./ex_npm/) (`/skill:audit`) · [`ex_app/`](./ex_app/) (`/skill:audit-python`) · [`ex_staging/`](./ex_staging/) (`/skill:deploy-staging`).
 - [`examples/subagents/`](./examples/subagents/) — read-only agent files for the subagent example extension + the extension-vs-parallel-processes diagram (§06).
@@ -86,7 +86,7 @@ English only**, so files use plain names and the Spanish names were translated r
 **Part 2:**
 - [`examples/methodology/`](./examples/methodology/) — the 11-stage flow, one end-to-end example, tool prevalence, the five-check outbound gate, the ops runbook (machine sync → shared record), the flow diagram; plus the real `tools/` (atlassian, evidence) and `s3-sync/` scripts (§08, §11).
 - [`examples/gsd/`](./examples/gsd/) · [`examples/codegraph/`](./examples/codegraph/) · [`examples/serena/`](./examples/serena/) — the method's tools in Pi (§09).
-- [`docs/ai-agents-code-methodology/`](./docs/ai-agents-code-methodology/) — the portable starter kit: [`PI_ADAPTATION.md`](./docs/ai-agents-code-methodology/PI_ADAPTATION.md) + [`pi/`](./docs/ai-agents-code-methodology/pi/) (`AGENTS.md.example`, `mcp.json.example`, `settings.json.example`, `extensions/block-external-git.ts`, skills `day`, `atlassian`, `evidence`, `kg`, `kg-refresh`, `methodology-plan`, `sanitise-diff`). The Cursor and Copilot adaptations ship in the same pack (§10).
+- [`docs/ai-agents-code-methodology/`](./docs/ai-agents-code-methodology/) — the portable starter kit: [`PI_ADAPTATION.md`](./docs/ai-agents-code-methodology/PI_ADAPTATION.md) + [`pi/`](./docs/ai-agents-code-methodology/pi/) (`AGENTS.md.example`, `mcp.json.example`, `settings.json.example`, `extensions/block-external-git.ts`, skills `day`, `atlassian`, `evidence`, `preview`, `kg`, `kg-refresh`, `methodology-plan`, `sanitise-diff`). The Cursor and Copilot adaptations ship in the same pack (§10).
 - [`docs/synchro/`](./docs/synchro/) — sync runbooks: `machine-sync/`, `laptop-to-main/`, and `s3-sync/` (§11).
 
 **Part 3:**

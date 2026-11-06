@@ -236,6 +236,7 @@ Define once; keep in the working agreement + rules:
     day/SKILL.md
     atlassian/SKILL.md       # read-only tracker/wiki
     evidence/SKILL.md        # read-only run-evidence capture
+    preview/SKILL.md         # local before/after in the real preview page
   hooks.json               # optional hard gates
   hooks/
     block-external-git.ps1

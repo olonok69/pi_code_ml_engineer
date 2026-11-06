@@ -17,7 +17,7 @@ Full adaptation guide: [`../docs/ai-agents-code-methodology/PI_ADAPTATION.md`](.
 | [`context/`](./context/) | 03 | Context window / `/compact` | `/compact [instructions]` + `compaction.*`, `/tree`, `/fork`, lean levers |
 | [`prompt-caching/`](./prompt-caching/) | 03 | Caching in Claude Code | Automatic markers; `PI_CACHE_RETENTION`, `cacheWarming`, `showCacheMissNotices` + API demo |
 | [`mcp/`](./mcp/) | 04 | `.mcp.json` + `claude mcp add` | `.pi/mcp.json` + `pi mcp add`; `codemode` default vs `toolExposure: direct` |
-| [`skills-plugins/`](./skills-plugins/) | 05 | Slash commands + skills + plugins | Agent Skills (`/skill:name`), prompt templates, `pi install` packages; `day`, `atlassian`, `evidence`, `audit*`, `deploy-staging` |
+| [`skills-plugins/`](./skills-plugins/) | 05 | Slash commands + skills + plugins | Agent Skills (`/skill:name`), prompt templates, `pi install` packages; `day`, `atlassian`, `evidence`, `preview`, `audit*`, `deploy-staging` |
 | [`subagents/`](./subagents/) | 06 | Task + Agent Teams | **Not built in** — subagent example extension, parallel `pi` processes, [3rd-party] packages |
 | [`extensions/`](./extensions/) | 07 | Hooks (`exit 2`) | TypeScript extensions: `pi.on("tool_call") → { block: true, reason }` — the [TESTED] git gate |
 | [`local-models/`](./local-models/) | 01 | Model choice (cloud) | Local models on a 4 GB GPU: llama.cpp router preset, Ollama/LM Studio `models.json`, small-model settings, agent/server comparison |

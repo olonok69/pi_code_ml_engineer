@@ -47,6 +47,7 @@ in this folder keep only `name` + `description` anyway, so they are portable as-
 | [`day`](./.pi/skills/day/SKILL.md) | The methodology's start/end-of-day routine for the shared record (role-aware) | `/skill:day start` |
 | [`atlassian`](./.pi/skills/atlassian/SKILL.md) | Read-only Jira/Confluence; tool in [`../methodology/tools/atlassian/`](../methodology/tools/atlassian/) | `/skill:atlassian jira issue PROJ-123` |
 | [`evidence`](./.pi/skills/evidence/SKILL.md) | Read-only run-evidence capture; core in [`../methodology/tools/evidence/`](../methodology/tools/evidence/) | `/skill:evidence discover --env dev --since 24h --list` |
+| [`preview`](./.pi/skills/preview/SKILL.md) | Local before/after of a document in the real preview page, in the deployed image; tool stays in the project ([why](../methodology/tools/README.md#3-not-shipped-here-preview-and-ticket_status)) | `/skill:preview --doc <id>` |
 
 The first three are also **live** in this repo's root [`.pi/skills/`](../../.pi/skills/) (open the repo in
 Pi, `/trust`, then invoke). `day`'s scripts: [`../methodology/s3-sync/`](../methodology/s3-sync/).

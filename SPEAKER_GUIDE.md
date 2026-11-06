@@ -273,7 +273,7 @@ over 20 KB middle-truncated with the full text saved to a temp file; `/tree` and
 ## 5. Skills, prompt templates and packages
 
 *Slide 14.* Reference: [`TECHNICAL_GUIDE.md` §8](./TECHNICAL_GUIDE.md#8-skills-and-packages). Example:
-[`examples/skills-plugins/`](./examples/skills-plugins/) (with `day`, `atlassian`, `evidence`; tools in
+[`examples/skills-plugins/`](./examples/skills-plugins/) (with `day`, `atlassian`, `evidence`, `preview`; tools in
 [`examples/methodology/tools/`](./examples/methodology/tools/)). Live in this repo: [`.pi/skills/`](./.pi/skills/)
 (`audit`, `audit-python`, `deploy-staging`) against [`ex_npm/`](./ex_npm/), [`ex_app/`](./ex_app/),
 [`ex_staging/`](./ex_staging/).
@@ -538,7 +538,7 @@ class · durable trail · the human owns the external.
 
 **The kit:** `PI_ADAPTATION.md` plus `pi/` — `AGENTS.md.example`, `mcp.json.example` (CodeGraph and Serena
 `direct`, Playwright and Context7 `deferred`), `settings.json.example`, `extensions/block-external-git.ts`, and
-skills `day`, `atlassian`, `evidence`, `kg`, `kg-refresh` (plus `methodology-plan`, `sanitise-diff`) with
+skills `day`, `atlassian`, `evidence`, `preview`, `kg`, `kg-refresh` (plus `methodology-plan`, `sanitise-diff`) with
 invocation fixed to `/skill:name`. The pack also carries the Cursor and Copilot adaptations — the discipline
 reaches every agent.
 

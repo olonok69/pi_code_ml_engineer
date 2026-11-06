@@ -23,8 +23,12 @@ description: >-
 
 ```bash
 # Adjust path to the real script in this repo
-./docs/knowledge-graph/kg_query.sh "<ticket-or-topic>"
+./docs/knowledge-graph/kg_query.sh "<ticket-or-topic>"       # neighbours (explain)
+./docs/knowledge-graph/kg_query.sh "<A>" "<B>"              # shortest path between two tickets/topics
+./docs/knowledge-graph/kg_query.sh find <substring>         # discover exact node names
 ```
+
+If a topic resolves to the wrong node, run `find <substring>` to get the exact node id, then re-query.
 
 On Windows PowerShell, prefer the same script via `bash`/`wsl` if that is how the project runs it.
 

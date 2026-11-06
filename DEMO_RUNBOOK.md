@@ -1,5 +1,7 @@
 # DEMO_RUNBOOK — Pi presentation (37 slides)
 
+> 🇪🇸 Versión en español: [`DEMO_RUNBOOK_ES.md`](./DEMO_RUNBOOK_ES.md)
+
 Runbook for the **presenter**. Commands are bash (macOS, Linux, WSL2). Pi facts checked against
 **Pi 1.3.0 on 17 Oct 2026** — see [`docs/research/PI_FINDINGS_2026-10-17.md`](./docs/research/PI_FINDINGS_2026-10-17.md) —
 and updated for **Pi 1.5.0 on 6 Nov 2026** ([`docs/research/PI_UPDATE_2026-11-06.md`](./docs/research/PI_UPDATE_2026-11-06.md)).

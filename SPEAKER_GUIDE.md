@@ -1,5 +1,7 @@
 # Pi — Speaker guide (course in three parts)
 
+> 🇪🇸 Versión en español: [`GUIA_PRESENTACION.md`](./GUIA_PRESENTACION.md)
+
 > Deck: [`presentation/Pi_Presentation.pptx`](./presentation/) (37 slides; regenerate with
 > [`presentation/build_pptx_pi.py`](./presentation/build_pptx_pi.py)).
 
@@ -287,7 +289,7 @@ over 20 KB middle-truncated with the full text saved to a temp file; `/tree` and
   matches Claude Code and Cursor — copy your existing entries.
 - Transports: stdio and streamable HTTP. **SSE is rejected.** Tools are named `mcp__server__tool`.
 - CLI: `pi mcp add <name> -- <cmd> [args]`, `pi mcp add <name> --url …`, `pi mcp list` (exits 1 on failure),
-  `pi mcp login|logout`, `/mcp` in the TUI. (Help synopsis omits `add`/`remove`, but they exist [TESTED].)
+  `pi mcp login|logout`, `/mcp` in the TUI.
 - **Exposure modes — the part that matters for the methodology:**
   - `codemode` (**default**): not declared as tools; callable only from codemode JavaScript scripts.
   - `deferred`: loaded via `tool_search`.

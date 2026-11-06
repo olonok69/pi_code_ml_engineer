@@ -1,5 +1,7 @@
 # Local models on a small GPU (4 GB VRAM)
 
+> 🇪🇸 Versión en español: [`README_ES.md`](./README_ES.md).
+
 How to point Pi at a model running on your own machine, sized for a **4 GB** card, and how Pi compares
 with the other agents and servers people usually reach for.
 
@@ -143,7 +145,6 @@ Sizes are GGUF file sizes; add the KV cache (grows with context) and ~0.3–0.5 
 - [models-configuration] Pi docs, `models.json` reference — <https://pi.dev/docs/latest/models-configuration>
 - [qwen35-4b-gguf] Qwen3.5-4B GGUF quants — <https://huggingface.co/bartowski/Qwen_Qwen3.5-4B-GGUF>
 - [kilo-local] "The best local coding models for any setup" (2026-07-29) — <https://blog.kilo.ai/p/the-best-local-coding-models-for>
-
 - [compaction] Pi docs, Compaction (`modelOverrides`; summaries use the output limit since 1.4.0) — <https://pi.dev/docs/latest/compaction>
 
 All checked 2026-11-06 against Pi 1.5.0. Agent comparisons (Aider, OpenCode, Cline, Continue) are design-level, not benchmarked here.

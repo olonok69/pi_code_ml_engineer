@@ -107,6 +107,9 @@ cd my-project && pi
 {"providers":{"ollama":{"baseUrl":"http://localhost:11434/v1","api":"openai-completions","apiKey":"ollama","models":[{"id":"qwen2.5-coder:7b"}]}}}
 ```
 
+Small-GPU walkthrough (4 GB VRAM: preset, `models.json`, compaction settings, agent and server
+comparison): [`examples/local-models/`](./examples/local-models/).
+
 ### Models and thinking
 
 | Where | How |

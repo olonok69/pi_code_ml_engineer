@@ -1,0 +1,11 @@
+{
+  "$schema": "https://pi.dev/schemas/settings.schema.json",
+
+  "defaultThinkingLevel": "off",
+
+  "compaction": {
+    "enabled": true,
+    "reserveTokens": 6144,
+    "keepRecentTokens": 8000
+  }
+}

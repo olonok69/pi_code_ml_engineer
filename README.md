@@ -80,6 +80,7 @@ English only**, so files use plain names and the Spanish names were translated r
   **Demo targets:** [`ex_npm/`](./ex_npm/) (`/skill:audit`) · [`ex_app/`](./ex_app/) (`/skill:audit-python`) · [`ex_staging/`](./ex_staging/) (`/skill:deploy-staging`).
 - [`examples/subagents/`](./examples/subagents/) — read-only agent files for the subagent example extension + the extension-vs-parallel-processes diagram (§06).
 - [`examples/extensions/`](./examples/extensions/) — the hooks analogue: the **tested** `block-external-git.ts` + untested patterns (§07). **Live:** [`.pi/extensions/`](./.pi/extensions/).
+- [`examples/local-models/`](./examples/local-models/) — local models on a 4 GB GPU: llama.cpp router preset, Ollama/LM Studio, small-model settings, which agent and server fit (§01).
 - [`examples/automation/`](./examples/automation/) — print/JSON/RPC/SDK, and a GitHub Actions **pattern** (not an official action) (§07).
 
 **Part 2:**
